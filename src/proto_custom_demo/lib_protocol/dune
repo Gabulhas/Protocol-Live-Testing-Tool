@@ -1,0 +1,149 @@
+; This file was automatically generated, do not edit.
+; Edit file manifest/main.ml instead.
+
+(library
+ (name tezos_protocol_environment_custom_demo)
+ (public_name tezos-protocol-custom-demo.environment)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-protocol-environment)
+ (library_flags (:standard -linkall))
+ (modules Tezos_protocol_environment_custom_demo))
+
+(rule
+ (targets tezos_protocol_environment_custom_demo.ml)
+ (action
+  (write-file
+   %{targets}
+   "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V8.Make(Name)()\n")))
+
+(library
+ (name tezos_raw_protocol_custom_demo)
+ (public_name tezos-protocol-custom-demo.raw)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-protocol-custom-demo.environment)
+ (library_flags (:standard -linkall))
+ (flags
+  (:standard)
+  -nostdlib
+  -nopervasives
+  -open Tezos_protocol_environment_custom_demo
+  -open Tezos_protocol_environment_custom_demo.Pervasives
+  -open Tezos_protocol_environment_custom_demo.Error_monad)
+ (modules
+  Error
+  Proto_params
+  Header
+  State
+  Proto_operation
+  Receipt
+  Apply
+  Services
+  Main))
+
+(library
+ (name tezos_protocol_custom_demo)
+ (public_name tezos-protocol-custom-demo)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-protocol-environment
+  tezos-protocol-environment.sigs
+  tezos-protocol-custom-demo.raw)
+ (flags
+  (:standard)
+  -nopervasives)
+ (modules Protocol Tezos_protocol_custom_demo))
+
+(install
+ (package tezos-protocol-custom-demo)
+ (section lib)
+ (files (TEZOS_PROTOCOL as raw/TEZOS_PROTOCOL)))
+
+(rule
+ (targets protocol.ml)
+ (action
+  (write-file
+   %{targets}
+   "\nlet hash = Tezos_crypto.Protocol_hash.of_b58check_exn \"PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn\"\nlet name = Tezos_protocol_environment_custom_demo.Name.name\ninclude Tezos_raw_protocol_custom_demo\ninclude Tezos_raw_protocol_custom_demo.Main\n")))
+
+(rule
+ (targets tezos_protocol_custom_demo.ml)
+ (action
+  (write-file
+   %{targets}
+   "\nmodule Environment = Tezos_protocol_environment_custom_demo\nmodule Protocol = Protocol\n")))
+
+(rule
+ (alias runtest_compile_protocol)
+ (deps
+  error.ml error.mli
+  proto_params.ml proto_params.mli
+  header.ml header.mli
+  state.ml state.mli
+  proto_operation.ml proto_operation.mli
+  receipt.ml receipt.mli
+  apply.ml apply.mli
+  services.ml services.mli
+  main.ml main.mli
+  (:src_dir TEZOS_PROTOCOL))
+ (action (run %{bin:octez-protocol-compiler} -no-hash-check -warn-error +a .)))
+
+(library
+ (name tezos_protocol_custom_demo_functor)
+ (libraries
+  tezos-protocol-environment
+  tezos-protocol-environment.sigs)
+ (flags
+  (:standard)
+  -nopervasives)
+ (modules Functor))
+
+(rule
+ (targets functor.ml)
+ (deps
+  error.ml error.mli
+  proto_params.ml proto_params.mli
+  header.ml header.mli
+  state.ml state.mli
+  proto_operation.ml proto_operation.mli
+  receipt.ml receipt.mli
+  apply.ml apply.mli
+  services.ml services.mli
+  main.ml main.mli (:src_dir TEZOS_PROTOCOL))
+ (action
+  (with-stdout-to
+   %{targets}
+   (chdir
+    %{workspace_root}
+    (run %{bin:octez-protocol-compiler.octez-protocol-packer} %{src_dir})))))
+
+(library
+ (name tezos_embedded_protocol_custom_demo)
+ (public_name tezos-embedded-protocol-custom-demo)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-protocol-custom-demo
+  tezos-protocol-updater
+  tezos-protocol-environment)
+ (library_flags (:standard -linkall))
+ (modules Registerer))
+
+(rule
+ (targets registerer.ml)
+ (deps
+  error.ml error.mli
+  proto_params.ml proto_params.mli
+  header.ml header.mli
+  state.ml state.mli
+  proto_operation.ml proto_operation.mli
+  receipt.ml receipt.mli
+  apply.ml apply.mli
+  services.ml services.mli
+  main.ml main.mli (:src_dir TEZOS_PROTOCOL))
+ (action
+  (with-stdout-to
+   %{targets}
+   (chdir
+    %{workspace_root}
+    (run %{bin:octez-embedded-protocol-packer} %{src_dir} custom_demo)))))
