@@ -42,7 +42,7 @@ let msg_param ~name ~desc next =
 let () =
   register_error_kind
     `Permanent
-    ~id:"demo.client.badAmountParam"
+    ~id:"custom_demo.client.badAmountParam"
     ~title:"Bad Amount Param"
     ~description:"Invalid amount parameter."
     ~pp:(fun ppf (arg_name, literal) ->

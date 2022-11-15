@@ -41,6 +41,7 @@ depopts: [
   "tezos-embedded-protocol-genesis"
   "tezos-embedded-protocol-demo-noops"
   "tezos-embedded-protocol-demo-counter"
+  "tezos-embedded-protocol-custom-demo"
   "tezos-embedded-protocol-001-PtCJ7pwo"
   "tezos-embedded-protocol-002-PsYLVpVv"
   "tezos-embedded-protocol-003-PsddFKi3"

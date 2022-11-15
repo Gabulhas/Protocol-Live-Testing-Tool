@@ -26,6 +26,11 @@
   (select void_for_linking-tezos-client-demo-counter from
    (tezos-client-demo-counter -> void_for_linking-tezos-client-demo-counter.empty)
    (-> void_for_linking-tezos-client-demo-counter.empty))
+
+  (select void_for_linking-tezos-client-custom-demo from
+     (tezos-client-custom-demo -> void_for_linking-tezos-client-custom-demo.empty)
+     (-> void_for_linking-tezos-client-custom-demo.empty))
+
   (select void_for_linking-tezos-client-000-Ps9mPmXa from
    (tezos-client-000-Ps9mPmXa -> void_for_linking-tezos-client-000-Ps9mPmXa.empty)
    (-> void_for_linking-tezos-client-000-Ps9mPmXa.empty))
@@ -123,6 +128,7 @@
   (progn
    (write-file void_for_linking-tezos-client-genesis.empty "")
    (write-file void_for_linking-tezos-client-demo-counter.empty "")
+   (write-file void_for_linking-tezos-client-custom-demo.empty "")
    (write-file void_for_linking-tezos-client-000-Ps9mPmXa.empty "")
    (write-file void_for_linking-tezos-client-001-PtCJ7pwo-commands-registration.empty "")
    (write-file void_for_linking-tezos-client-002-PsYLVpVv-commands-registration.empty "")
