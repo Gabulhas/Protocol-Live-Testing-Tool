@@ -170,7 +170,7 @@ let apply_operation_aux application_state operation =
 
 let validate_operation ?check_signature:_ validation_state _oph operation =
   Logging.log Notice "validate_operation" ;
-  apply_operation_aux validation_state operation
+    apply_operation_aux validation_state operation
 
 let apply_operation application_state _oph operation =
   Logging.log Notice "apply_operation" ;

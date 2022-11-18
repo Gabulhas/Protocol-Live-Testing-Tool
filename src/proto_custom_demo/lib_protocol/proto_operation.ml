@@ -23,32 +23,26 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-type t = IncrA | IncrB | Transfer of Int32.t
+(*type t = IncrA | IncrB | Transfer of Int32.t*)
+
+type t = Transaction_to_implicit of {destination: Signature.Public_key_hash.t; amount: Tez_repr.tez} 
+
 
 let encoding =
   let open Data_encoding in
-  let casea =
-    let dest = function IncrA -> Some () | _ -> None in
-    let const () = IncrA in
-    case ~title:"IncrA" (Tag 0) (obj1 (req "IncrA" empty)) dest const
+  let caseTransaction_to_implicit =
+    let dest = function Transaction_to_implicit {destination; amount} -> Some (destination, amount) in
+    let const (destination, amount) = Transaction_to_implicit {destination; amount} in
+    case ~title:"Transaction_to_implicit" (Tag 0) (obj2 (req "Destination" Signature.Public_key_hash.encoding) (req "Amount" Tez_repr.encoding)) dest const
   in
-  let caseb =
-    let dest = function IncrB -> Some () | _ -> None in
-    let const () = IncrB in
-    case ~title:"IncrB" (Tag 1) (obj1 (req "IncrB" empty)) dest const
-  in
-  let casec =
-    let dest = function Transfer i -> Some i | _ -> None in
-    let const i = Transfer i in
-    case ~title:"Transfer" (Tag 2) (obj1 (req "Transfer" int32)) dest const
-  in
-  union [casea; caseb; casec]
-
-let to_pii t =
-  match t with IncrA -> (0l, 0l) | IncrB -> (1l, 0l) | Transfer i -> (2l, i)
+  union [caseTransaction_to_implicit]
 
 let compare x y =
-  let (a, b) = to_pii x in
-  let (u, v) = to_pii y in
-  let open Compare.Int32 in
-  if a = u then compare b v else compare a u
+    match x, y with
+    | Transaction_to_implicit {destination= a_d; amount= a_a}, Transaction_to_implicit {destination= b_d; amount= b_a} -> (
+        let open Signature.Public_key_hash in  
+        if a_d = b_d then 
+            Tez_repr.compare a_a b_a 
+        else 
+            compare a_d b_d
+    )

@@ -23,7 +23,7 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-type t = IncrA | IncrB | Transfer of Int32.t
+type t = Transaction_to_implicit of {destination: Signature.Public_key_hash.t; amount: Tez_repr.tez} 
 
 (* transfer from A to B, possibly a negative amount *)
 

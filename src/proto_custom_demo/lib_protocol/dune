@@ -40,7 +40,10 @@
   Receipt
   Apply
   Services
-  Main))
+  Main
+  Tez_repr
+  Raw_context
+  ))
 
 (library
  (name tezos_protocol_custom_demo)

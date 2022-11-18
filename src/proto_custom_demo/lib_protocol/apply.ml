@@ -26,10 +26,6 @@
 let apply State.{a; b} operation =
   let open Int32 in
   match operation with
-  | Proto_operation.IncrA ->
-      Some State.{a = add a 1l; b}
-  | Proto_operation.IncrB ->
-      Some State.{a; b = add b 1l}
-  | Proto_operation.Transfer i ->
+  | Proto_operation.Transaction_to_implicit {destination; amount} ->
       let state = State.{a = sub a i; b = add b i} in
       if State.invariant state then Some state else None
