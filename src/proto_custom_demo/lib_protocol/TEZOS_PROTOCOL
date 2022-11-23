@@ -1,18 +1,16 @@
 {
-    "expected_env_version": 8,
+    "expected_env_version": 6,
     "hash": "PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn",
     "modules": 
         [
-                "Error",
-                "Proto_params",
-                "Header",
-                "State",
-                "Proto_operation",
-                "Receipt",
-                "Apply",
-                "Services",
-                "Main",
-                "Tez_repr",
-                "Raw_context"
+"Alpha_context",
+"Apply",
+"Constants_repr",
+"Error",
+"Block_header_repr",
+"Main",
+"Raw_context",
+"Services",
+"Tez_repr"
         ]
 }
