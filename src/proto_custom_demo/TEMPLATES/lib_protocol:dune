@@ -32,21 +32,7 @@
   -open Tezos_protocol_environment_custom_demo.Pervasives
   -open Tezos_protocol_environment_custom_demo.Error_monad)
  (modules
-   Alpha_context
-Apply
-Block_header_repr
-Constants_repr
-Error
-Fitness_repr
-Main
-NBits_repr
-Operation_repr
-Raw_context
-Receipt_repr
-Services
-Tez_repr
-Time_repr
-Transaction_repr
+   TEMPLATE_MODULES_PART
   ))
 
 (library
@@ -84,25 +70,7 @@ Transaction_repr
 (rule
  (alias runtest_compile_protocol)
  (deps
-   alpha_context.ml
-apply.ml
-apply.mli
-block_header_repr.ml
-constants_repr.ml
-error.ml
-error.mli
-fitness_repr.ml
-main.ml
-main.mli
-nBits_repr.ml
-operation_repr.ml
-raw_context.ml
-receipt_repr.ml
-services.ml
-services.mli
-tez_repr.ml
-time_repr.ml
-transaction_repr.ml
+   TEMPLATE_FILES_PART
   (:src_dir TEZOS_PROTOCOL))
  (action (run %{bin:octez-protocol-compiler} -no-hash-check -warn-error +a .)))
 
@@ -119,25 +87,7 @@ transaction_repr.ml
 (rule
  (targets functor.ml)
  (deps
-   alpha_context.ml
-apply.ml
-apply.mli
-block_header_repr.ml
-constants_repr.ml
-error.ml
-error.mli
-fitness_repr.ml
-main.ml
-main.mli
-nBits_repr.ml
-operation_repr.ml
-raw_context.ml
-receipt_repr.ml
-services.ml
-services.mli
-tez_repr.ml
-time_repr.ml
-transaction_repr.ml
+   TEMPLATE_FILES_PART
  (:src_dir TEZOS_PROTOCOL))
  (action
   (with-stdout-to
@@ -160,25 +110,7 @@ transaction_repr.ml
 (rule
  (targets registerer.ml)
  (deps
-   alpha_context.ml
-apply.ml
-apply.mli
-block_header_repr.ml
-constants_repr.ml
-error.ml
-error.mli
-fitness_repr.ml
-main.ml
-main.mli
-nBits_repr.ml
-operation_repr.ml
-raw_context.ml
-receipt_repr.ml
-services.ml
-services.mli
-tez_repr.ml
-time_repr.ml
-transaction_repr.ml
+   TEMPLATE_FILES_PART
   (:src_dir TEZOS_PROTOCOL))
  (action
   (with-stdout-to

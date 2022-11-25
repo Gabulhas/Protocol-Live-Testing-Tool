@@ -23,7 +23,10 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+(*
 val rpc_services : Updater.rpc_context RPC_directory.t
 
 val get_counter :
   'a #RPC_context.simple -> 'a -> [`A | `B] -> int32 shell_tzresult Lwt.t
+
+*)

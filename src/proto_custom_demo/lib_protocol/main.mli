@@ -30,6 +30,4 @@
 
 include
   Updater.PROTOCOL
-    with type block_header_data = Header.t
-     and type operation_receipt = Receipt.t
-     and type operation_data = Proto_operation.t
+    with type block_header_data = Block_header.t

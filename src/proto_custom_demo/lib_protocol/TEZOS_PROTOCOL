@@ -3,14 +3,20 @@
     "hash": "PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn",
     "modules": 
         [
-"Alpha_context",
+         "Alpha_context",
 "Apply",
+"Block_header_repr",
 "Constants_repr",
 "Error",
-"Block_header_repr",
+"Fitness_repr",
 "Main",
+"NBits_repr",
+"Operation_repr",
 "Raw_context",
+"Receipt_repr",
 "Services",
-"Tez_repr"
-        ]
+"Tez_repr",
+"Time_repr",
+"Transaction_repr"
+         ]
 }

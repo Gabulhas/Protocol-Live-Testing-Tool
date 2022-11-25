@@ -23,43 +23,44 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-(*
-module S = struct
-  let path = RPC_path.open_root
+include Time
 
-  let service_counter_a =
-    RPC_service.get_service
-      ~description:"Value of counter A"
-      ~query:RPC_query.empty
-      ~output:Data_encoding.int32
-      RPC_path.(path / "counter" / "a")
+type time = t
 
-  let service_counter_b =
-    RPC_service.get_service
-      ~description:"Value of counter B"
-      ~query:RPC_query.empty
-      ~output:Data_encoding.int32
-      RPC_path.(path / "counter" / "b")
-end
+type error += Timestamp_add (* `Permanent *)
 
-let rpc_services : Updater.rpc_context RPC_directory.t =
-  let dir = RPC_directory.empty in
-  let dir =
-    RPC_directory.register ~chunked:false dir S.service_counter_a (fun ctxt () () ->
-        let context = ctxt.Updater.context in
-        State.get_state context >>= fun state -> return state.State.a)
-  in
-  let dir =
-    RPC_directory.register ~chunked:false dir S.service_counter_b (fun ctxt () () ->
-        let context = ctxt.Updater.context in
-        State.get_state context >>= fun state -> return state.State.b)
-  in
-  dir
+type error += Timestamp_sub (* `Permanent *)
 
-let get_counter rpc_ctxt chain_blk counter_name =
-  match counter_name with
-  | `A ->
-      RPC_context.make_call0 S.service_counter_a rpc_ctxt chain_blk () ()
-  | `B ->
-      RPC_context.make_call0 S.service_counter_b rpc_ctxt chain_blk () ()
-*)
+let () =
+  register_error_kind
+    `Permanent
+    ~id:"timestamp_add"
+    ~title:"Timestamp add"
+    ~description:"Overflow when adding timestamps."
+    ~pp:(fun ppf () -> Format.fprintf ppf "Overflow when adding timestamps.")
+    Data_encoding.empty
+    (function Timestamp_add -> Some () | _ -> None)
+    (fun () -> Timestamp_add) ;
+  register_error_kind
+    `Permanent
+    ~id:"timestamp_sub"
+    ~title:"Timestamp sub"
+    ~description:"Substracting timestamps resulted in negative period."
+    ~pp:(fun ppf () ->
+      Format.fprintf ppf "Substracting timestamps resulted in negative period.")
+    Data_encoding.empty
+    (function Timestamp_sub -> Some () | _ -> None)
+    (fun () -> Timestamp_sub)
+
+let of_seconds s = 
+    match Int64.of_string_opt s with 
+    | Some t -> Some (of_seconds t)
+    | None -> None
+
+let to_seconds = to_seconds
+
+let to_seconds_string s = Int64.to_string (to_seconds s)
+
+let pp = pp_hum
+
+let zero = Time.of_seconds 0L
