@@ -52,3 +52,13 @@ module Fitness = struct
 
   include Fitness_repr
 end
+
+
+
+
+module Account = struct
+  include Account_repr
+  include Account_storage
+end
+
+

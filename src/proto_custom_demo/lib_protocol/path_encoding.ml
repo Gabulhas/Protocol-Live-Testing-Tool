@@ -2,6 +2,7 @@
 (*                                                                           *)
 (* Open Source License                                                       *)
 (* Copyright (c) 2018 Dynamic Ledger Solutions, Inc. <contact@tezos.com>     *)
+(* Copyright (c) 2021 DaiLambda, Inc. <contact@dailambda.jp>                 *)
 (*                                                                           *)
 (* Permission is hereby granted, free of charge, to any person obtaining a   *)
 (* copy of this software and associated documentation files (the "Software"),*)
@@ -22,66 +23,33 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
-type missing_key_kind = Get | Set | Del | Copy
 
-type storage_error =
-  | Incompatible_protocol_version of string
-  | Missing_key of string list * missing_key_kind
-  | Existing_key of string list
-  | Corrupted_data of string list
+module type S = sig
+  type t
 
+  val to_path : t -> string list -> string list
 
-type error += Storage_error of storage_error
+  val of_path : string list -> t option
 
+  val path_length : int
+end
 
-module Int_set = Set.Make (Compare.Int)
+module type ENCODING = sig
+  type t
 
-type t = {
-  context: Context.t ;
-  timestamp: Time.t ;
-  fitness: Int64.t ;
-  fees: Tez_repr.t ;
-  rewards: Tez_repr.t ;
-  internal_nonce: int ;
-  internal_nonces_used: Int_set.t ;
-  (*TODO: add PoW specific stuff*)
-}
+  val to_bytes : t -> bytes
 
-type context = t
+  val of_bytes_opt : bytes -> t option
+end
 
-type root_context = t
+module Make_hex (H : ENCODING) = struct
+  let path_length = 1
 
-type root = t
+  let to_path t l =
+    let (`Hex key) = Hex.of_bytes (H.to_bytes t) in
+    key :: l
 
-
-let current_context               ctxt = ctxt.context
-let current_timestamp             ctxt = ctxt.timestamp
-let current_fitness               ctxt = ctxt.fitness
-let current_fees                  ctxt = ctxt.fees
-let current_rewards               ctxt = ctxt.rewards
-let current_internal_nonce        ctxt = ctxt.internal_nonce
-let current_internal_nonces_used  ctxt = ctxt.internal_nonces_used
-
-(*This is used to do CRUD stuff with reprs in the chain (in the Context.t)
-
-
-VVVVVVVVVVVVVVVVVVVVVv
-
-
- *)
-
-
-(* Generic context ********************************************************)
-
-type key = string list
-
-type value = bytes
-
-type tree = Context.tree
-
-module type T =
-  Raw_context_intf.T
-    with type root := root
-     and type key := key
-     and type value := value
-     and type tree := tree
+  let of_path = function
+    | [path] -> Option.bind (Hex.to_bytes (`Hex path)) H.of_bytes_opt
+    | _ -> None
+end

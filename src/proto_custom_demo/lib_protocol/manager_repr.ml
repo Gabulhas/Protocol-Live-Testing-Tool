@@ -22,66 +22,32 @@
 (* DEALINGS IN THE SOFTWARE.                                                 *)
 (*                                                                           *)
 (*****************************************************************************)
-type missing_key_kind = Get | Set | Del | Copy
 
-type storage_error =
-  | Incompatible_protocol_version of string
-  | Missing_key of string list * missing_key_kind
-  | Existing_key of string list
-  | Corrupted_data of string list
+(* Tezos Protocol Implementation - Low level Repr. of Managers' keys *)
 
+type manager_key =
+  | Hash of Signature.Public_key_hash.t
+  | Public_key of Signature.Public_key.t
 
-type error += Storage_error of storage_error
+type t = manager_key
 
+open Data_encoding
 
-module Int_set = Set.Make (Compare.Int)
+let hash_case tag =
+  case
+    tag
+    ~title:"Public_key_hash"
+    Signature.Public_key_hash.encoding
+    (function Hash hash -> Some hash | _ -> None)
+    (fun hash -> Hash hash)
 
-type t = {
-  context: Context.t ;
-  timestamp: Time.t ;
-  fitness: Int64.t ;
-  fees: Tez_repr.t ;
-  rewards: Tez_repr.t ;
-  internal_nonce: int ;
-  internal_nonces_used: Int_set.t ;
-  (*TODO: add PoW specific stuff*)
-}
+let pubkey_case tag =
+  case
+    tag
+    ~title:"Public_key"
+    Signature.Public_key.encoding
+    (function Public_key hash -> Some hash | _ -> None)
+    (fun hash -> Public_key hash)
 
-type context = t
+let encoding = union [hash_case (Tag 0); pubkey_case (Tag 1)]
 
-type root_context = t
-
-type root = t
-
-
-let current_context               ctxt = ctxt.context
-let current_timestamp             ctxt = ctxt.timestamp
-let current_fitness               ctxt = ctxt.fitness
-let current_fees                  ctxt = ctxt.fees
-let current_rewards               ctxt = ctxt.rewards
-let current_internal_nonce        ctxt = ctxt.internal_nonce
-let current_internal_nonces_used  ctxt = ctxt.internal_nonces_used
-
-(*This is used to do CRUD stuff with reprs in the chain (in the Context.t)
-
-
-VVVVVVVVVVVVVVVVVVVVVv
-
-
- *)
-
-
-(* Generic context ********************************************************)
-
-type key = string list
-
-type value = bytes
-
-type tree = Context.tree
-
-module type T =
-  Raw_context_intf.T
-    with type root := root
-     and type key := key
-     and type value := value
-     and type tree := tree
