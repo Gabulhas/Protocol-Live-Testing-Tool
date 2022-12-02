@@ -36,7 +36,6 @@ let pp ppf = Signature.Public_key_hash.pp ppf
 let pp_short ppf = Signature.Public_key_hash.pp_short ppf
 
 let encoding =
-  let open Data_encoding in
   Data_encoding.def "AccountHash" Signature.Public_key_hash.encoding
 
 (* Renamed exports. *)

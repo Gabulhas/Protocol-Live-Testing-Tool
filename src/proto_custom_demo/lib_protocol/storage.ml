@@ -112,7 +112,7 @@ module Contract = struct
          (struct
            let name = ["index"]
          end))
-         (Make_index (Account_storage.Index))
+         (Make_index (Account_repr.Index))
 
   let fold = Indexed_context.fold_keys
 
