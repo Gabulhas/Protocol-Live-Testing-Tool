@@ -71,23 +71,10 @@ module Pair (I1 : INDEX) (I2 : INDEX) : INDEX with type t = I1.t * I2.t
 module Make_data_set_storage (C : Raw_context.T) (I : INDEX) :
   Data_set_storage with type t = C.t and type elt = I.t
 
-(** Like [Make_data_set_storage], adding tracking of storage cost. *)
-module Make_carbonated_data_set_storage (C : Raw_context.T) (I : INDEX) :
-  Carbonated_data_set_storage with type t = C.t and type elt = I.t
 
 (** This functor creates storage for types with a notion of an index. *)
 module Make_indexed_data_storage (C : Raw_context.T) (I : INDEX) (V : VALUE) :
   Indexed_data_storage with type t = C.t and type key = I.t and type value = V.t
-
-(** Like [Make_indexed_data_storage], adding tracking of storage cost. *)
-module Make_indexed_carbonated_data_storage
-    (C : Raw_context.T)
-    (I : INDEX)
-    (V : VALUE) :
-  Non_iterable_indexed_carbonated_data_storage_with_values
-    with type t = C.t
-     and type key = I.t
-     and type value = V.t
 
 module Make_indexed_data_snapshotable_storage
     (C : Raw_context.T)

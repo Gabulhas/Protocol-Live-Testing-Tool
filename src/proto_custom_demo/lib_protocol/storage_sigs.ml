@@ -132,109 +132,6 @@ module type Non_iterable_indexed_data_storage = sig
 end
 [@@coq_precise_signature]
 
-(** Variant of {!Non_iterable_indexed_data_storage} with gas accounting. *)
-module type Non_iterable_indexed_carbonated_data_storage = sig
-  type t
-
-  type context = t
-
-  (** An abstract type for keys *)
-  type key
-
-  (** The type of values *)
-  type value
-
-  (** Tells if a given key is already bound to a storage bucket.
-      Consumes [Gas_repr.read_bytes_cost Z.zero]. *)
-  val mem : context -> key -> (Raw_context.t * bool) tzresult Lwt.t
-
-  (** Retrieve a value from the storage bucket at a given key ;
-      returns {!Storage_error Missing_key} if the key is not set ;
-      returns {!Storage_error Corrupted_data} if the deserialisation
-      fails.
-      Consumes [Gas_repr.read_bytes_cost <size of the value>]. *)
-  val get : context -> key -> (Raw_context.t * value) tzresult Lwt.t
-
-  (** Retrieve a value from the storage bucket at a given key ;
-      returns [None] if the value is not set ; returns {!Storage_error
-      Corrupted_data} if the deserialisation fails.
-      Consumes [Gas_repr.read_bytes_cost <size of the value>] if present
-      or [Gas_repr.read_bytes_cost Z.zero]. *)
-  val find : context -> key -> (Raw_context.t * value option) tzresult Lwt.t
-
-  (** Updates the content of a bucket ; returns A {!Storage_Error
-      Missing_key} if the value does not exists.
-      Consumes serialization cost.
-      Consumes [Gas_repr.write_bytes_cost <size of the new value>].
-      Returns the difference from the old to the new size. *)
-  val update : context -> key -> value -> (Raw_context.t * int) tzresult Lwt.t
-
-  (** Allocates a storage bucket at the given key and initializes it ;
-      returns a {!Storage_error Existing_key} if the bucket exists.
-      Consumes serialization cost.
-      Consumes [Gas_repr.write_bytes_cost <size of the value>].
-      Returns the size. *)
-  val init : context -> key -> value -> (Raw_context.t * int) tzresult Lwt.t
-
-  (** Allocates a storage bucket at the given key and initializes it
-      with a value ; just updates it if the bucket exists.
-      Consumes serialization cost.
-      Consumes [Gas_repr.write_bytes_cost <size of the new value>].
-      Returns the difference from the old (maybe 0) to the new size, and a boolean
-      indicating if a value was already associated to this key. *)
-  val add :
-    context -> key -> value -> (Raw_context.t * int * bool) tzresult Lwt.t
-
-  (** When the value is [Some v], allocates the data and initializes
-      it with [v] ; just updates it if the bucket exists. When the
-      value is [None], delete the storage bucket when the value ; does
-      nothing if the bucket does not exists.
-      Consumes serialization cost.
-      Consumes the same gas cost as either {!remove} or {!init_set}.
-      Returns the difference from the old (maybe 0) to the new size, and a boolean
-      indicating if a value was already associated to this key. *)
-  val add_or_remove :
-    context ->
-    key ->
-    value option ->
-    (Raw_context.t * int * bool) tzresult Lwt.t
-
-  (** Delete a storage bucket and its contents ; returns a
-      {!Storage_error Missing_key} if the bucket does not exists.
-      Consumes [Gas_repr.write_bytes_cost Z.zero].
-      Returns the freed size. *)
-  val remove_existing : context -> key -> (Raw_context.t * int) tzresult Lwt.t
-
-  (** Removes a storage bucket and its contents ; does nothing if the
-      bucket does not exists.
-      Consumes [Gas_repr.write_bytes_cost Z.zero].
-      Returns the freed size, and a boolean
-      indicating if a value was already associated to this key. *)
-  val remove : context -> key -> (Raw_context.t * int * bool) tzresult Lwt.t
-end
-[@@coq_precise_signature]
-
-module type Non_iterable_indexed_carbonated_data_storage_with_values = sig
-  include Non_iterable_indexed_carbonated_data_storage
-
-  (* HACK *)
-  val list_values :
-    ?offset:int ->
-    ?length:int ->
-    t ->
-    (Raw_context.t * value list) tzresult Lwt.t
-end
-
-module type Non_iterable_indexed_carbonated_data_storage_INTERNAL = sig
-  include Non_iterable_indexed_carbonated_data_storage_with_values
-
-  val fold_keys_unaccounted :
-    context ->
-    order:[`Sorted | `Undefined] ->
-    init:'a ->
-    f:(key -> 'a -> 'a Lwt.t) ->
-    'a Lwt.t
-end
 
 (** The generic signature of indexed data accessors (a set of values
     of the same type indexed by keys of the same form in the
@@ -332,43 +229,6 @@ module type Data_set_storage = sig
   val clear : context -> Raw_context.t Lwt.t
 end
 
-(** Variant of {!Data_set_storage} with gas accounting. *)
-module type Carbonated_data_set_storage = sig
-  type t
-
-  type context = t
-
-  (** The type of elements. *)
-  type elt
-
-  (** Tells whether an elt is a member of the set.
-      Consumes [Gas_repr.read_bytes_cost Z.zero] *)
-  val mem : context -> elt -> (Raw_context.t * bool) tzresult Lwt.t
-
-  (** Adds an elt as a member of the set.
-      Consumes [Gas_repr.write_bytes_cost <size of the new value>].
-      Returns the the new size. *)
-  val init : context -> elt -> (Raw_context.t * int) tzresult Lwt.t
-
-  (** Adds an elt as a member of the set.
-      Consumes [Gas_repr.write_bytes_cost <size of the new value>].
-      Returns the new size, and true if the value previously existed. *)
-  val add : context -> elt -> (Raw_context.t * int * bool) tzresult Lwt.t
-
-  (** Removes an elt from the set ; does nothing if not a member.
-      Consumes [Gas_repr.write_bytes_cost Z.zero].
-      Returns the freed size, and a boolean
-      indicating if a value was already associated to this key. *)
-  val remove : context -> elt -> (Raw_context.t * int * bool) tzresult Lwt.t
-
-  val fold_keys_unaccounted :
-    context ->
-    order:[`Sorted | `Undefined] ->
-    init:'acc ->
-    f:(elt -> 'acc -> 'acc Lwt.t) ->
-    'acc Lwt.t
-end
-
 module type NAME = sig
   val name : Raw_context.key
 end
@@ -412,12 +272,6 @@ module type Indexed_raw_context = sig
 
   module Make_map (_ : NAME) (V : VALUE) :
     Indexed_data_storage with type t = t and type key = key and type value = V.t
-
-  module Make_carbonated_map (_ : NAME) (V : VALUE) :
-    Non_iterable_indexed_carbonated_data_storage
-      with type t = t
-       and type key = key
-       and type value = V.t
 
   module Raw_context : Raw_context.T with type t = t ipath
 end
