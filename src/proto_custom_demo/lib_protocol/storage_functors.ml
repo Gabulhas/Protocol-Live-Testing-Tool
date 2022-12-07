@@ -131,6 +131,9 @@ module Make_subcontext (R : REGISTER) (C : Raw_context.T) (N : NAME) :
 
   type error += Operation_quota_exceeded = C.Operation_quota_exceeded
 
+  let consume_gas = C.consume_gas
+
+  let check_enough_gas = C.check_enough_gas
 
   let description =
     let description =
@@ -349,6 +352,306 @@ struct
          I.args)
       V.encoding
     [@@coq_axiom_with_reason "stack overflow in Coq"]
+end
+
+(* Internal-use-only version of {!Make_indexed_carbonated_data_storage} to
+   expose fold_keys_unaccounted *)
+module Make_indexed_carbonated_data_storage_INTERNAL
+    (C : Raw_context.T)
+    (I : INDEX)
+    (V : VALUE) :
+  Non_iterable_indexed_carbonated_data_storage_INTERNAL
+    with type t = C.t
+     and type key = I.t
+     and type value = V.t = struct
+  type t = C.t
+
+  type context = t
+
+  type key = I.t
+
+  type value = V.t
+
+  include Make_encoder (V)
+
+  let data_key i = I.to_path i [data_name]
+
+  let len_key i = I.to_path i [len_name]
+
+  let consume_mem_gas c key =
+    let path_length = List.length @@ C.absolute_key c key in
+    C.consume_gas c (Storage_costs.read_access ~path_length ~read_bytes:0)
+
+  let existing_size c i =
+    C.find c (len_key i) >|= function
+    | None -> ok (0, false)
+    | Some len -> decode_len_value (len_key i) len >|? fun len -> (len, true)
+
+  let consume_read_gas get c i =
+    let len_key = len_key i in
+    get c len_key >>=? fun len ->
+    let path_length = List.length @@ C.absolute_key c len_key in
+    Lwt.return
+      ( decode_len_value len_key len >>? fun read_bytes ->
+        let cost = Storage_costs.read_access ~path_length ~read_bytes in
+        C.consume_gas c cost )
+
+  (* For the future: here, we bill a generic cost for encoding the value
+     to bytes. It would be cleaner for users of this functor to provide
+     gas costs for the encoding. *)
+  let consume_serialize_write_gas set c i v =
+    let bytes = to_bytes v in
+    let len = Bytes.length bytes in
+    C.consume_gas c (Gas_limit_repr.alloc_mbytes_cost len) >>?= fun c ->
+    let cost = Storage_costs.write_access ~written_bytes:len in
+    C.consume_gas c cost >>?= fun c ->
+    set c (len_key i) (encode_len_value bytes) >|=? fun c -> (c, bytes)
+
+  let consume_remove_gas del c i =
+    C.consume_gas c (Storage_costs.write_access ~written_bytes:0) >>?= fun c ->
+    del c (len_key i)
+
+  let mem s i =
+    let key = data_key i in
+    consume_mem_gas s key >>?= fun s ->
+    C.mem s key >|= fun exists -> ok (C.project s, exists)
+
+  let get_unprojected s i =
+    consume_read_gas C.get s i >>=? fun s ->
+    C.get s (data_key i) >>=? fun b ->
+    let key () = C.absolute_key s (data_key i) in
+    Lwt.return (of_bytes ~key b >|? fun v -> (s, v))
+
+  let get s i = get_unprojected s i >|=? fun (s, v) -> (C.project s, v)
+
+  let find s i =
+    let key = data_key i in
+    consume_mem_gas s key >>?= fun s ->
+    C.mem s key >>= fun exists ->
+    if exists then get s i >|=? fun (s, v) -> (s, Some v)
+    else return (C.project s, None)
+
+  let update s i v =
+    existing_size s i >>=? fun (prev_size, _) ->
+    consume_serialize_write_gas C.update s i v >>=? fun (s, bytes) ->
+    C.update s (data_key i) bytes >|=? fun t ->
+    let size_diff = Bytes.length bytes - prev_size in
+    (C.project t, size_diff)
+
+  let init s i v =
+    consume_serialize_write_gas C.init s i v >>=? fun (s, bytes) ->
+    C.init s (data_key i) bytes >|=? fun t ->
+    let size = Bytes.length bytes in
+    (C.project t, size)
+
+  let add s i v =
+    let add s i v = C.add s i v >|= ok in
+    existing_size s i >>=? fun (prev_size, existed) ->
+    consume_serialize_write_gas add s i v >>=? fun (s, bytes) ->
+    add s (data_key i) bytes >|=? fun t ->
+    let size_diff = Bytes.length bytes - prev_size in
+    (C.project t, size_diff, existed)
+
+  let remove s i =
+    let remove s i = C.remove s i >|= ok in
+    existing_size s i >>=? fun (prev_size, existed) ->
+    consume_remove_gas remove s i >>=? fun s ->
+    remove s (data_key i) >|=? fun t -> (C.project t, prev_size, existed)
+
+  let remove_existing s i =
+    existing_size s i >>=? fun (prev_size, _) ->
+    consume_remove_gas C.remove_existing s i >>=? fun s ->
+    C.remove_existing s (data_key i) >|=? fun t -> (C.project t, prev_size)
+
+  let add_or_remove s i v =
+    match v with None -> remove s i | Some v -> add s i v
+
+  (** Because big map values are not stored under some common key,
+      we have no choice but to fold over all nodes with a path of length
+      [I.path_length] to retrieve actual keys and then paginate.
+
+      While this is inefficient and will traverse the whole tree ([O(n)]), there
+      currently isn't a better decent alternative.
+
+      Once https://gitlab.com/tezos/tezos/-/merge_requests/2771 which flattens paths is done,
+      {!C.list} could be used instead here. *)
+  let list_values ?(offset = 0) ?(length = max_int) s =
+    let root = [] in
+    let depth = `Eq I.path_length in
+    C.fold
+      s
+      root
+      ~depth
+      ~order:`Sorted
+      ~init:(ok (s, [], offset, length))
+      ~f:(fun file tree acc ->
+        match (C.Tree.kind tree, acc) with
+        | `Tree, Ok (s, rev_values, offset, length) -> (
+            if Compare.Int.(length <= 0) then
+              (* Keep going until the end, we have no means of short-circuiting *)
+              Lwt.return acc
+            else if Compare.Int.(offset > 0) then
+              (* Offset (first element) not reached yet *)
+              let offset = pred offset in
+              Lwt.return (Ok (s, rev_values, offset, length))
+            else
+              (* Nominal case *)
+              match I.of_path file with
+              | None -> assert false
+              | Some key ->
+                  get_unprojected s key >|=? fun (s, value) ->
+                  (s, value :: rev_values, 0, pred length))
+        | _ -> Lwt.return acc)
+    >|=? fun (s, rev_values, _offset, _length) ->
+    (C.project s, List.rev rev_values)
+
+  let fold_keys_unaccounted s ~order ~init ~f =
+    C.fold
+      ~depth:(`Eq (1 + I.path_length))
+      s
+      []
+      ~order
+      ~init
+      ~f:(fun file tree acc ->
+        match C.Tree.kind tree with
+        | `Value -> (
+            match List.rev file with
+            | last :: _ when Compare.String.(last = len_name) -> Lwt.return acc
+            | last :: rest when Compare.String.(last = data_name) -> (
+                let file = List.rev rest in
+                match I.of_path file with
+                | None -> assert false
+                | Some path -> f path acc)
+            | _ -> assert false)
+        | `Tree -> Lwt.return acc)
+
+  let keys_unaccounted s =
+    fold_keys_unaccounted s ~order:`Sorted ~init:[] ~f:(fun p acc ->
+        Lwt.return (p :: acc))
+
+  let () =
+    let open Storage_description in
+    let unpack = unpack I.args in
+    register_value (* TODO export consumed gas ?? *)
+      ~get:(fun c ->
+        let c, k = unpack c in
+        find c k >|=? fun (_, v) -> v)
+      (register_indexed_subcontext
+         ~list:(fun c -> keys_unaccounted c >|= ok)
+         C.description
+         I.args)
+      V.encoding
+    [@@coq_axiom_with_reason "stack overflow in Coq"]
+end
+
+module Make_indexed_carbonated_data_storage : functor
+  (C : Raw_context.T)
+  (I : INDEX)
+  (V : VALUE)
+  ->
+  Non_iterable_indexed_carbonated_data_storage_with_values
+    with type t = C.t
+     and type key = I.t
+     and type value = V.t =
+  Make_indexed_carbonated_data_storage_INTERNAL
+
+module Make_carbonated_data_set_storage (C : Raw_context.T) (I : INDEX) :
+  Carbonated_data_set_storage with type t = C.t and type elt = I.t = struct
+  module V = struct
+    type t = unit
+
+    let encoding = Data_encoding.unit
+  end
+
+  module M = Make_indexed_carbonated_data_storage_INTERNAL (C) (I) (V)
+
+  type t = M.t
+
+  type context = t
+
+  type elt = I.t
+
+  let mem = M.mem
+
+  let init s i = M.init s i ()
+
+  let add s i = M.add s i ()
+
+  let remove s i = M.remove s i
+
+  let fold_keys_unaccounted = M.fold_keys_unaccounted
+end
+
+module Make_indexed_data_snapshotable_storage
+    (C : Raw_context.T)
+    (Snapshot_index : INDEX)
+    (I : INDEX)
+    (V : VALUE) :
+  Indexed_data_snapshotable_storage
+    with type t = C.t
+     and type snapshot = Snapshot_index.t
+     and type key = I.t
+     and type value = V.t = struct
+  type snapshot = Snapshot_index.t
+
+  let data_name = ["current"]
+
+  let snapshot_name = ["snapshot"]
+
+  module C_data =
+    Make_subcontext (Registered) (C)
+      (struct
+        let name = data_name
+      end)
+
+  module C_snapshot =
+    Make_subcontext (Registered) (C)
+      (struct
+        let name = snapshot_name
+      end)
+
+  module V_encoder = Make_encoder (V)
+  include Make_indexed_data_storage (C_data) (I) (V)
+  module Snapshot =
+    Make_indexed_data_storage (C_snapshot) (Pair (Snapshot_index) (I)) (V)
+
+  let snapshot_path id = snapshot_name @ Snapshot_index.to_path id []
+
+  let snapshot_exists s id = C.mem_tree s (snapshot_path id)
+
+  let err_missing_key key = Raw_context.storage_error (Missing_key (key, Copy))
+
+  let snapshot s id =
+    C.find_tree s data_name >>= function
+    | None -> Lwt.return (err_missing_key data_name)
+    | Some tree ->
+        C.add_tree s (snapshot_path id) tree >|= (fun t -> C.project t) >|= ok
+
+  let fold_snapshot s id ~order ~init ~f =
+    C.find_tree s (snapshot_path id) >>= function
+    | None -> Lwt.return (err_missing_key data_name)
+    | Some tree ->
+        C_data.Tree.fold
+          tree
+          ~depth:(`Eq I.path_length)
+          []
+          ~order
+          ~init:(Ok init)
+          ~f:(fun file tree acc ->
+            acc >>?= fun acc ->
+            C.Tree.to_value tree >>= function
+            | Some v -> (
+                match I.of_path file with
+                | None -> assert false
+                | Some path -> (
+                    let key () = C.absolute_key s file in
+                    match V_encoder.of_bytes ~key v with
+                    | Ok v -> f path v acc
+                    | Error _ -> return acc))
+            | None -> return acc)
+
+  let delete_snapshot s id =
+    C.remove s (snapshot_path id) >|= fun t -> C.project t
 end
 
 module Make_indexed_subcontext (C : Raw_context.T) (I : INDEX) :
@@ -797,4 +1100,55 @@ module type WRAPPER = sig
   val wrap : t -> key
 
   val unwrap : key -> t option
+end
+
+module Wrap_indexed_data_storage
+    (C : Indexed_data_storage)
+    (K : WRAPPER with type key := C.key) :
+  Indexed_data_storage
+    with type t = C.t
+     and type key = K.t
+     and type value = C.value = struct
+  type t = C.t
+
+  type context = C.t
+
+  type key = K.t
+
+  type value = C.value
+
+  let mem ctxt k = C.mem ctxt (K.wrap k)
+
+  let get ctxt k = C.get ctxt (K.wrap k)
+
+  let find ctxt k = C.find ctxt (K.wrap k)
+
+  let update ctxt k v = C.update ctxt (K.wrap k) v
+
+  let init ctxt k v = C.init ctxt (K.wrap k) v
+
+  let add ctxt k v = C.add ctxt (K.wrap k) v
+
+  let add_or_remove ctxt k v = C.add_or_remove ctxt (K.wrap k) v
+
+  let remove_existing ctxt k = C.remove_existing ctxt (K.wrap k)
+
+  let remove ctxt k = C.remove ctxt (K.wrap k)
+
+  let clear ctxt = C.clear ctxt
+
+  let fold ctxt ~order ~init ~f =
+    C.fold ctxt ~order ~init ~f:(fun k v acc ->
+        match K.unwrap k with None -> Lwt.return acc | Some k -> f k v acc)
+
+  let bindings s =
+    fold s ~order:`Sorted ~init:[] ~f:(fun p v acc ->
+        Lwt.return ((p, v) :: acc))
+
+  let fold_keys s ~order ~init ~f =
+    C.fold_keys s ~order ~init ~f:(fun k acc ->
+        match K.unwrap k with None -> Lwt.return acc | Some k -> f k acc)
+
+  let keys s =
+    fold_keys s ~order:`Sorted ~init:[] ~f:(fun p acc -> Lwt.return (p :: acc))
 end

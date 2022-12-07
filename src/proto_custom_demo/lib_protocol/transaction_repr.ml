@@ -20,4 +20,3 @@ let encoding : transaction encoding =
        (fun {amount; destination} -> (amount, destination))
        (fun (amount, destination) -> {amount; destination})
        (merge_objs Tez_repr.encoding Signature.Public_key_hash.encoding)
-

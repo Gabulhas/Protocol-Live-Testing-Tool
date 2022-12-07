@@ -553,6 +553,10 @@ module type T = sig
   (** Internally used in {!Storage_functors} to consume gas from
      within a view. May raise {!Block_quota_exceeded} or
      {!Operation_quota_exceeded}. *)
+  val consume_gas : t -> Gas_limit_repr.cost -> t tzresult
+
+  (** Check if consume_gas will fail *)
+  val check_enough_gas : t -> Gas_limit_repr.cost -> unit tzresult
+
   val description : t Storage_description.t
 end
-

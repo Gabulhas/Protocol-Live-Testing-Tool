@@ -1,6 +1,5 @@
-
 (** The maximum size of a block header in bytes. *)
-let max_block_length = 0 + Block_header_repr.max_header_length
+let max_block_length = 0 + Alpha_context.Block_header.max_header_length
 
   (** The maximum size of an {!operation} in bytes. This value is bigger than the size
       of the bytes required for {!operation_data}, because this value accounts
@@ -12,7 +11,7 @@ let max_operation_data_length = 0
 let validation_passes = []
 
   (** The economic protocol-specific type of blocks. *)
-type block_header_data = Block_header_repr.t
+type block_header_data = Alpha_context.Block_header.block_header
 
   (** Encoding for economic protocol-specific part of block headers. *)
 let block_header_data_encoding = Block_header_repr.encoding
@@ -63,7 +62,10 @@ let operation_receipt_encoding = ()
 
 let operation_data_and_receipt_encoding = ()
       
-
+(*
+let operation_data_encoding = Alpha_context.Operation.protocol_data_encoding
+*)
+let operation_data_encoding = ()
 
   (** [acceptable_passes op] lists the validation passes in which the
      input operation [op] can appear. For instance, it results in
