@@ -34,39 +34,37 @@ type t = {
   rewards : Tez_repr.t;
   internal_nonce : int;
   internal_nonces_used : Int_set.t; (*TODO: add PoW specific stuff*)
+  remaining_operation_gas: Gas_limit_repr.Arith.fp;
+  unlimited_operation_gas: bool
 }
-
-type context = t
-
-type root_context = t
-
-type root = t
 
 let[@inline] context ctxt = ctxt.context
 
+let[@inline] timestamp ctxt = ctxt.timestamp
+
+let[@inline] fitness ctxt = ctxt.fitness
+
+let[@inline] fees ctxt = ctxt.fees
+
+let[@inline] rewards ctxt = ctxt.rewards
+
+let[@inline] internal_nonce ctxt = ctxt.internal_nonce
+
+let[@inline] internal_nonces_used ctxt = ctxt.internal_nonces_used
+
 let[@inline] update_context ctxt context = {ctxt with context}
 
-let current_context ctxt = ctxt.context
+let[@inline] remaining_operation_gas ctxt = ctxt.remaining_operation_gas
 
-let current_timestamp ctxt = ctxt.timestamp
+let[@inline] update_remaining_operation_gas ctxt remaining_operation_gas =
+  {ctxt with remaining_operation_gas}
 
-let current_fitness ctxt = ctxt.fitness
-
-let current_fees ctxt = ctxt.fees
-
-let current_rewards ctxt = ctxt.rewards
-
-let current_internal_nonce ctxt = ctxt.internal_nonce
-
-let current_internal_nonces_used ctxt = ctxt.internal_nonces_used
-
-(*This is used to do CRUD stuff with reprs in the chain (in the Context.t)
+let[@inline] unlimited_operation_gas ctxt = ctxt.unlimited_operation_gas
 
 
-  VVVVVVVVVVVVVVVVVVVVVv
-*)
 
-(* Generic context ********************************************************)
+
+
 
 type storage_error =
   | Incompatible_protocol_version of string
@@ -78,6 +76,14 @@ type error += Storage_error of storage_error
 
 let storage_error err = error (Storage_error err)
 
+type error += Block_quota_exceeded (* `Temporary *)
+
+type error += Operation_quota_exceeded (* `Temporary *)
+
+
+(* Generic context ********************************************************)
+
+type root = t
 
 type key = string list
 
@@ -175,6 +181,8 @@ let list ctxt ?offset ?length k = Context.list (context ctxt) ?offset ?length k
 let fold ?depth ctxt k ~order ~init ~f =
   Context.fold ?depth (context ctxt) k ~order ~init ~f
 
+let description = Storage_description.create ()
+
 let config ctxt = Context.config (context ctxt)
 
 module Proof = Context.Proof
@@ -250,45 +258,17 @@ let project x = x
 
 let absolute_key _ k = k
 
-(**let description = Storage_description.create ()**)
 
-module Cache = struct
-  type key = Context.Cache.key
 
-  type value = Context.Cache.value = ..
+(****** GAS STUFF ***********)
 
-  let key_of_identifier = Context.Cache.key_of_identifier
+let consume_gas ctxt cost =
+  match Gas_limit_repr.raw_consume (remaining_operation_gas ctxt) cost with
+  | Some gas_counter -> Ok (update_remaining_operation_gas ctxt gas_counter)
+  | None ->
+      if unlimited_operation_gas ctxt then ok ctxt
+      else error Operation_quota_exceeded
 
-  let identifier_of_key = Context.Cache.identifier_of_key
+let check_enough_gas ctxt cost =
+  consume_gas ctxt cost >>? fun _ -> Result.return_unit
 
-  let pp fmt ctxt = Context.Cache.pp fmt (context ctxt)
-
-  let find c k = Context.Cache.find (context c) k
-
-  let set_cache_layout c layout =
-    Context.Cache.set_cache_layout (context c) layout >>= fun ctxt ->
-    Lwt.return (update_context c ctxt)
-
-  let update c k v = Context.Cache.update (context c) k v |> update_context c
-
-  let sync c ~cache_nonce =
-    Context.Cache.sync (context c) ~cache_nonce >>= fun ctxt ->
-    Lwt.return (update_context c ctxt)
-
-  let clear c = Context.Cache.clear (context c) |> update_context c
-
-  let list_keys c ~cache_index =
-    Context.Cache.list_keys (context c) ~cache_index
-
-  let key_rank c key = Context.Cache.key_rank (context c) key
-
-  let cache_size_limit c ~cache_index =
-    Context.Cache.cache_size_limit (context c) ~cache_index
-
-  let cache_size c ~cache_index =
-    Context.Cache.cache_size (context c) ~cache_index
-
-  let future_cache_expectation c ~time_in_blocks =
-    Context.Cache.future_cache_expectation (context c) ~time_in_blocks
-    |> update_context c
-end

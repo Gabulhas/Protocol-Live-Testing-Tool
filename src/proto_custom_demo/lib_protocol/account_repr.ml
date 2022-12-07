@@ -11,7 +11,7 @@ end)
 
 let to_b58check = Signature.Public_key_hash.to_b58check
 
-let implicit_of_b58data : Base58.data -> Signature.public_key_hash option =
+let account_of_b58data : Base58.data -> Signature.public_key_hash option =
   function
   | Ed25519.Public_key_hash.Data h -> Some (Signature.Ed25519 h)
   | Secp256k1.Public_key_hash.Data h -> Some (Signature.Secp256k1 h)
@@ -19,7 +19,7 @@ let implicit_of_b58data : Base58.data -> Signature.public_key_hash option =
   | _ -> None
 
 let contract_of_b58data data : t option =
-  match implicit_of_b58data data with Some pkh -> Some pkh | None -> None
+  match account_of_b58data data with Some pkh -> Some pkh | None -> None
 
 let of_b58check_gen ~of_b58data s =
   match Base58.decode s with

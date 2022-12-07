@@ -33,17 +33,6 @@ type public_key_hash = Signature.Public_key_hash.t
 
 type signature = Signature.t
 
-(*
-module Constants = struct
-    include Constants_repr
-  include Constants_storage
-  module Parametric = Constants_parametric_repr
-
-  let round_durations ctxt = Raw_context.round_durations ctxt
-
-  let all ctxt = all_of_parametric (parametric ctxt)
-end
-*)
 
 module Receipt = Receipt_repr
 
@@ -54,11 +43,10 @@ module Fitness = struct
 end
 
 
-
-
 module Account = struct
   include Account_repr
   include Account_storage
 end
 
+let description = Raw_context.description
 

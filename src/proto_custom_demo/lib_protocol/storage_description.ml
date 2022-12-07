@@ -56,7 +56,8 @@ and 'key description =
     }
       -> 'key description
 
-let rec pp : type a. Format.formatter -> a t -> unit =
+let[@coq_struct "function_parameter"] rec pp :
+    type a. Format.formatter -> a t -> unit =
  fun ppf {dir; _} ->
   match dir with
   | Empty -> Format.fprintf ppf "Empty"
@@ -71,7 +72,8 @@ let rec pp : type a. Format.formatter -> a t -> unit =
       let name = Format.asprintf "<%s>" (RPC_arg.descr arg).name in
       pp_item ppf (name, subdir)
 
-and pp_item : type a. Format.formatter -> string * a t -> unit =
+and[@coq_mutual_as_notation] pp_item :
+    type a. Format.formatter -> string * a t -> unit =
  fun ppf (name, desc) -> Format.fprintf ppf "@[<hv 2>%s@ %a@]" name pp desc
 
 let pp_rev_path ppf path =
@@ -131,6 +133,7 @@ let rec unpack : type a b c. (a, b, c) args -> c -> a * b = function
         let c, d = unpack_r x in
         let b, a = unpack_l c in
         (b, (a, d))
+  [@@coq_axiom_with_reason "gadt"]
 
 let rec pack : type a b c. (a, b, c) args -> a -> b -> c = function
   | One _ -> fun b a -> (b, a)
@@ -140,6 +143,7 @@ let rec pack : type a b c. (a, b, c) args -> a -> b -> c = function
       fun b (a, d) ->
         let c = pack_l b a in
         pack_r c d
+  [@@coq_axiom_with_reason "gadt"]
 
 let rec compare : type a b c. (a, b, c) args -> b -> b -> int = function
   | One {compare; _} -> compare
@@ -148,6 +152,7 @@ let rec compare : type a b c. (a, b, c) args -> b -> b -> int = function
       let compare_r = compare r in
       fun (a1, b1) (a2, b2) ->
         match compare_l a1 a2 with 0 -> compare_r b1 b2 | x -> x)
+  [@@coq_axiom_with_reason "gadt"]
 
 let destutter equal l =
   match l with
@@ -211,6 +216,7 @@ let rec register_indexed_subcontext :
                 (RPC_arg.descr arg).name
                 (RPC_arg.descr inner_arg).name
           | Some RPC_arg.Eq -> subdir))
+ [@@coq_axiom_with_reason "gadt"]
 
 let register_value :
     type a b.
@@ -271,6 +277,7 @@ let rec combine_object = function
               handler.get k i >>=? fun v1 ->
               handlers.get k i >|=? fun v2 -> (v1, v2));
         }
+  [@@coq_axiom_with_reason "gadt"]
 
 type query = {depth : int}
 
@@ -378,3 +385,5 @@ let build_directory : type key. key t -> key RPC_directory.t =
   in
   ignore (build_handler dir RPC_path.open_root : key opt_handler) ;
   !rpc_dir
+ [@@coq_axiom_with_reason "gadt"]
+
