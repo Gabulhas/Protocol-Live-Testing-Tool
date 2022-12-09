@@ -61,11 +61,6 @@ let[@inline] update_remaining_operation_gas ctxt remaining_operation_gas =
 
 let[@inline] unlimited_operation_gas ctxt = ctxt.unlimited_operation_gas
 
-
-
-
-
-
 type storage_error =
   | Incompatible_protocol_version of string
   | Missing_key of string list * missing_key_kind
@@ -79,6 +74,22 @@ let storage_error err = error (Storage_error err)
 type error += Block_quota_exceeded (* `Temporary *)
 
 type error += Operation_quota_exceeded (* `Temporary *)
+
+
+(* This key should always be populated for every version of the
+   protocol.  It's absence meaning that the context is empty. *)
+let version_key = ["version"]
+
+(* This value is set by the snapshot_alpha.sh script, don't change it. *)
+let version_value = "custom_protocol"
+
+let version = "v1"
+
+let first_level_key = [version; "first_level"]
+
+let constants_key = [version; "constants"]
+
+let protocol_param_key = ["protocol_parameters"]
 
 
 (* Generic context ********************************************************)

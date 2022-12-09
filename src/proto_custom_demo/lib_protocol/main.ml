@@ -1,23 +1,23 @@
-(** The maximum size of a block header in bytes. *)
+type block_header_data = Alpha_context.Block_header.protocol_data
+
+type block_header = Alpha_context.Block_header.t = {
+  shell : Block_header.shell_header;
+  protocol_data : block_header_data;
+}
+
+let block_header_data_encoding = Alpha_context.Block_header.encoding
+
+
+
 let max_block_length = 0 + Alpha_context.Block_header.max_header_length
 
-  (** The maximum size of an {!operation} in bytes. This value is bigger than the size
-      of the bytes required for {!operation_data}, because this value accounts
-      for the shell header. *)
 let max_operation_data_length = 0
 
-  (** Operations quota for each validation pass. The length of the
-     list denotes the number of validation passes. *)
 let validation_passes = []
 
-  (** The economic protocol-specific type of blocks. *)
-type block_header_data = Alpha_context.Block_header.block_header
 
-  (** Encoding for economic protocol-specific part of block headers. *)
-let block_header_data_encoding = Block_header_repr.encoding
 
-  (** A fully parsed block header. *)
-type block_header = Block_header_repr.block_header
+
 
   (** Economic protocol-specific side information computed by the
      protocol during the validation of a block. Should not include

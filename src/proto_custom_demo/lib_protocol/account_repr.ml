@@ -20,6 +20,7 @@ let account_of_b58data : Base58.data -> Signature.public_key_hash option =
 
 let contract_of_b58data data : t option =
   match account_of_b58data data with Some pkh -> Some pkh | None -> None
+  
 
 let of_b58check_gen ~of_b58data s =
   match Base58.decode s with
