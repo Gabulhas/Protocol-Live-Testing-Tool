@@ -7,6 +7,7 @@ type block_header = Alpha_context.Block_header.t = {
 
 let block_header_data_encoding = Alpha_context.Block_header.encoding
 
+type block_header_metadata = unit
 
 
 let max_block_length = 0 + Alpha_context.Block_header.max_header_length
@@ -15,17 +16,12 @@ let max_operation_data_length = 0
 
 let validation_passes = []
 
-
-
-
-
-  (** Economic protocol-specific side information computed by the
+(** Economic protocol-specific side information computed by the
      protocol during the validation of a block. Should not include
      information about the evaluation of operations which is handled
      separately by {!operation_metadata}. To be used as an execution
      trace by tools (client, indexer). Not necessary for
      validation. *)
-type block_header_metadata = unit
 
 
 (** Encoding for economic protocol-specific block metadata. *)
@@ -56,18 +52,18 @@ type operation = unit
 (*val operation_receipt_encoding : operation_receipt Data_encoding.t*)
 let operation_receipt_encoding = () 
 
-  (** Encoding that mixes an operation data and its receipt. *)
+(** Encoding that mixes an operation data and its receipt. *)
 (*val operation_data_and_receipt_encoding :
-      (operation_data * operation_receipt) Data_encoding.t*)
+    (operation_data * operation_receipt) Data_encoding.t*)
 
 let operation_data_and_receipt_encoding = ()
-      
+
 (*
 let operation_data_encoding = Alpha_context.Operation.protocol_data_encoding
 *)
 let operation_data_encoding = ()
 
-  (** [acceptable_passes op] lists the validation passes in which the
+(** [acceptable_passes op] lists the validation passes in which the
      input operation [op] can appear. For instance, it results in
 [[0]] if [op] only belongs to the first pass. An answer of [[]]
 means that the [op] is ill-formed and cannot be included at
@@ -75,7 +71,7 @@ means that the [op] is ill-formed and cannot be included at
 (*val acceptable_passes : operation -> int list*)
 let acceptable_passes op = []
 
-  (** [relative_position_within_block op1 op2] provides a partial and
+(** [relative_position_within_block op1 op2] provides a partial and
      strict order of operations within a block. It is intended to be
      used as an argument to {!List.sort} (and other sorting/ordering
      functions) to arrange a set of operations into a sequence, the
@@ -127,70 +123,70 @@ val begin_partial_application :
                 predecessor_fitness:Fitness.t ->
                     block_header ->
                         validation_state tzresult Lwt.t
-*)
+                        *)
 
 let begin_partial_application chain_id ancestor_context predecessor_timestamp predecessor_fitness block_header =
     ()
 
-(** [begin_application chain_id ... bh] defines the first step in a
-block validation sequence. It initializes a validation context
-for validating a block, whose header is [bh]. *)
-(*val begin_application :
-    chain_id:Chain_id.t ->
-        predecessor_context:Context.t ->
-            predecessor_timestamp:Time.t ->
-                predecessor_fitness:Fitness.t ->
-                    block_header ->
-                        validation_state tzresult Lwt.t*)
+    (** [begin_application chain_id ... bh] defines the first step in a
+    block validation sequence. It initializes a validation context
+    for validating a block, whose header is [bh]. *)
+    (*val begin_application :
+        chain_id:Chain_id.t ->
+            predecessor_context:Context.t ->
+                predecessor_timestamp:Time.t ->
+                    predecessor_fitness:Fitness.t ->
+                        block_header ->
+                            validation_state tzresult Lwt.t*)
 let begin_application chain_id predecessor_context predecessor_timestamp predecessor_fitness block_header =
     ()
 
-(** [begin_construction] initializes a validation context for
-constructing a new block, as opposed to validating an existing
-block.
+    (** [begin_construction] initializes a validation context for
+    constructing a new block, as opposed to validating an existing
+    block.
 
-This function can be used in two modes: with and without the
-optional [protocol_data] argument. With the latter, it is used by
-bakers to start the process for baking a new block. Without it,
-is used by the Shell's prevalidator to construct a virtual block,
-which carries the contents of the pre-applied operations of the
-mempool.
+    This function can be used in two modes: with and without the
+    optional [protocol_data] argument. With the latter, it is used by
+    bakers to start the process for baking a new block. Without it,
+    is used by the Shell's prevalidator to construct a virtual block,
+    which carries the contents of the pre-applied operations of the
+    mempool.
 
-When [protocol_data] is provided, it is not expected to be the
-final value of the field of the same name in the {!block_header}
-of the block eventually being baked. Instead, it is expected to
-construct a protocol-specific, good enough, "prototype" of its
-final value. For instance, if the economic protocol specifies
-that its block headers include a signature, [protocol_data] must
+    When [protocol_data] is provided, it is not expected to be the
+    final value of the field of the same name in the {!block_header}
+    of the block eventually being baked. Instead, it is expected to
+    construct a protocol-specific, good enough, "prototype" of its
+    final value. For instance, if the economic protocol specifies
+    that its block headers include a signature, [protocol_data] must
 include a (faked) signature.
 
 Moreover, these prototypes should not be distinguishable after
 the application of [begin_construction]: the function must
 produce the exact same context regardless of being passed a
 prototype, or an "equivalent-but-complete" header. *)
-(*val begin_construction :
-    chain_id:Chain_id.t ->
-        predecessor_context:Context.t ->
-            predecessor_timestamp:Time.t ->
-                predecessor_level:Int32.t ->
-                    predecessor_fitness:Fitness.t ->
-                        predecessor:Block_hash.t ->
-                            timestamp:Time.t ->
-                                ?protocol_data:block_header_data ->
-                                    unit ->
-                                        validation_state tzresult Lwt.t
-*)
+    (*val begin_construction :
+        chain_id:Chain_id.t ->
+            predecessor_context:Context.t ->
+                predecessor_timestamp:Time.t ->
+                    predecessor_level:Int32.t ->
+                        predecessor_fitness:Fitness.t ->
+                            predecessor:Block_hash.t ->
+                                timestamp:Time.t ->
+                                    ?protocol_data:block_header_data ->
+                                        unit ->
+                                            validation_state tzresult Lwt.t
+                                            *)
 
 let begin_construction chain_id predecessor_context predecessor_timestamp predecessor_level predecessor_fitness predecessor timestamp ?protocol_data unit =
     ()
 
-(** [apply_operation vs op] applies the input operation [op] on top
-of the given {!validation_state} [vs]. It must be called after
-{!begin_application} or {!begin_construction}, and before
-{!finalize_block}, for each operation in a block. On a successful
-application, it returns a pair consisting of the resulting
-[validation_state], and the corresponding [operation_receipt]. *)
-(*
+    (** [apply_operation vs op] applies the input operation [op] on top
+    of the given {!validation_state} [vs]. It must be called after
+    {!begin_application} or {!begin_construction}, and before
+    {!finalize_block}, for each operation in a block. On a successful
+    application, it returns a pair consisting of the resulting
+    [validation_state], and the corresponding [operation_receipt]. *)
+    (*
 val apply_operation :
     validation_state ->
         operation ->
@@ -200,19 +196,19 @@ let apply_operation validation_state operation =
     ()
 
 
-(** [finalize_block vs] finalizes the context resulting from the
-application of the contents of the block being validated.
+    (** [finalize_block vs] finalizes the context resulting from the
+    application of the contents of the block being validated.
 
-If there is no protocol migration, i.e., if the block being
-applied is not the last block of the current economic protocol, the
-resulting context can be used in the future as input for the
-validation of its successor blocks. *)
-(*
+    If there is no protocol migration, i.e., if the block being
+    applied is not the last block of the current economic protocol, the
+    resulting context can be used in the future as input for the
+    validation of its successor blocks. *)
+    (*
 val finalize_block :
     validation_state ->
         Block_header.shell_header option ->
             (validation_result * block_header_metadata) tzresult Lwt.t
-*)
+            *)
 let finalize_block validation_state block_header = ()
 
 
@@ -235,7 +231,7 @@ implemented. *)
             Block_header.shell_header ->
                 validation_result tzresult Lwt.t
 
-*)
+                *)
 let init chain_id context header = ()
 
 (** [value_of_key chain_id predecessor_context
