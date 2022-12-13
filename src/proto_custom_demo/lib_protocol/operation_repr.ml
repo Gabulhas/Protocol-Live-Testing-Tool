@@ -31,3 +31,13 @@ let operation_repr_encoding =
     ]
 
 let encoding = operation_repr_encoding
+
+
+
+
+
+type packed_operation = {
+  shell : Operation.shell_header;
+  protocol_data : protocol_data;
+}
+

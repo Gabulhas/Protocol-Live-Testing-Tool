@@ -45,3 +45,16 @@ let apply_results_encoding =
     (req "refused_operations" (list Operation.encoding))
     (req "branch_refused_operations" (list Operation.encoding))
     (req "branch_delayed_operations" (list Operation.encoding))
+
+type transaction_result =
+  | Applied
+  | Backtracked of error trace option
+  | Failed of error trace
+  | Skipped
+
+type operation_result =
+  | TransactionResult of {
+      balance_updates : Receipt.balance_updates;
+      operation_result : transaction_result;
+      internal_operation_results : packed_internal_operation_result list;
+    }

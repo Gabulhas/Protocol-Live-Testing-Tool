@@ -1,14 +1,14 @@
-type block_header_data = Alpha_context.Block_header.t
+type block_header_data = Alpha_context.Block_header.protocol_data
 
 type block_header = Alpha_context.Block_header.t 
 
-let block_header_data_encoding = Alpha_context.Block_header.encoding
+let block_header_data_encoding = Alpha_context.Block_header.protocol_data_encoding
 
 
+let max_block_length = Alpha_context.Block_header.max_header_length
 
-let max_block_length = 0 + Alpha_context.Block_header.max_header_length
-
-let max_operation_data_length = 0
+(*TODO: change this to reflect actual values*)
+let max_operation_data_length = 32 * 1024 (* 32kB *)
 
 (*Ignored*)
 let validation_passes = []
@@ -19,29 +19,22 @@ let validation_passes = []
      separately by {!operation_metadata}. To be used as an execution
      trace by tools (client, indexer). Not necessary for
      validation. *)
-
-
 (** Encoding for economic protocol-specific block metadata. *)
-(*val block_header_metadata_encoding : block_header_metadata Data_encoding.t *)
 type block_header_metadata = Apply_results.block_metadata
 let block_header_metadata_encoding =  Apply_results.block_metadata_encoding
 
 (** The economic protocol-specific type of operations. *)
+(*OPeration data is the same data as the operation itself*)
 type operation_data = Operation_repr.operation
 
-(** Economic protocol-specific side information computed by the
-     protocol during the validation of each operation, to be used
-     conjointly with {!block_header_metadata}. *)
-type operation_receipt
+(** Result o applying an operation *)
+type operation_receipt = Apply_results.operation_result list
 
 (** A fully parsed operation. *)
-(*
-type operation = {
-    shell : Operation.shell_header;
-    protocol_data : operation_data;
-     }
-*)
-type operation = unit
+type operation = Alpha_context.packed_operation = {
+  shell : Operation.shell_header;
+  protocol_data : operation_data;
+}
 
   (** Encoding for economoic protocol-specific operation data. *)
 (*val operation_data_encoding : operation_data Data_encoding.t*)
