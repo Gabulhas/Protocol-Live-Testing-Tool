@@ -1,19 +1,16 @@
-type block_header_data = Alpha_context.Block_header.protocol_data
+type block_header_data = Alpha_context.Block_header.t
 
-type block_header = Alpha_context.Block_header.t = {
-  shell : Block_header.shell_header;
-  protocol_data : block_header_data;
-}
+type block_header = Alpha_context.Block_header.t 
 
 let block_header_data_encoding = Alpha_context.Block_header.encoding
 
-type block_header_metadata = unit
 
 
 let max_block_length = 0 + Alpha_context.Block_header.max_header_length
 
 let max_operation_data_length = 0
 
+(*Ignored*)
 let validation_passes = []
 
 (** Economic protocol-specific side information computed by the
@@ -26,10 +23,11 @@ let validation_passes = []
 
 (** Encoding for economic protocol-specific block metadata. *)
 (*val block_header_metadata_encoding : block_header_metadata Data_encoding.t *)
-let block_header_metadata_encoding =  (fun () -> ())
+type block_header_metadata = Apply_results.block_metadata
+let block_header_metadata_encoding =  Apply_results.block_metadata_encoding
 
 (** The economic protocol-specific type of operations. *)
-type operation_data
+type operation_data = Operation_repr.operation
 
 (** Economic protocol-specific side information computed by the
      protocol during the validation of each operation, to be used

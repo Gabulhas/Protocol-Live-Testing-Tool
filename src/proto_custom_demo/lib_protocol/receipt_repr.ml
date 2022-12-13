@@ -1,7 +1,6 @@
 (*FIXME: Account might be unecessary*)
 type balance = Account of Account_repr.t
 
-
 let balance_encoding =
   let open Data_encoding in
   def "operation_metadata.alpha.balance"
@@ -40,27 +39,22 @@ let balance_update_encoding =
                  | None -> failwith "Qty.of_mutez" )
              int64))
 
-
 (*FIXME: Protocol_migration might be unecessary*)
-type update_origin = Block_application | Protocol_migration
+type update_origin = Block_application 
 
 let update_origin_encoding =
   let open Data_encoding in
   def "operation_metadata.alpha.update_origin"
   @@ obj1 @@ req "origin"
   @@ union
-       [ case
+       [
+         case
            (Tag 0)
            ~title:"Block_application"
            (constant "block")
-           (function Block_application -> Some () | _ -> None)
+           (function Block_application -> Some () )
            (fun () -> Block_application);
-         case
-           (Tag 1)
-           ~title:"Protocol_migration"
-           (constant "migration")
-           (function Protocol_migration -> Some () | _ -> None)
-           (fun () -> Protocol_migration) ]
+       ]
 
 type balance_updates = (balance * balance_update * update_origin) list
 
@@ -70,7 +64,7 @@ let balance_updates_encoding =
   @@ list
        (conv
           (function
-            | (balance, balance_update, update_origin) ->
+            | balance, balance_update, update_origin ->
                 ((balance, balance_update), update_origin))
           (fun ((balance, balance_update), update_origin) ->
             (balance, balance_update, update_origin))
@@ -83,4 +77,3 @@ let cleanup_balance_updates balance_updates =
     (fun (_, (Credited update | Debited update), _) ->
       not (Tez_repr.equal update Tez_repr.zero))
     balance_updates
-

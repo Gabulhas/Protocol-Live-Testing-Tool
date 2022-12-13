@@ -13,6 +13,7 @@
 "Error",
 "Fitness_repr",
 "Gas_limit_repr",
+"Level_repr",
 "Main",
 "Manager_repr",
 "Misc",
@@ -21,6 +22,7 @@
 "Path_encoding",
 "Raw_context_intf",
 "Raw_context",
+"Raw_level_repr",
 "Receipt_repr",
 "Saturation_repr",
 "Services",
@@ -30,7 +32,6 @@
 "Storage",
 "Storage_sigs",
 "Tez_repr",
-"Time_repr",
-"Transaction_repr"
+"Time_repr"
          ]
 }
