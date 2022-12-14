@@ -1,22 +1,28 @@
-type operation =
+type raw = Operation.t = {shell : Operation.shell_header; proto : bytes}
+
+let raw_encoding = Operation.encoding
+
+type types_of_operation =
   | Transaction of {
       source : Account_repr.t;
       amount : Tez_repr.tez;
       destination : Account_repr.t;
-      fee: Tez_repr.tez;
+      fee : Tez_repr.tez;
       nonce : int32;
       difficulty : int32;
     }
 
-
-type error = Negative_value_transfer of Tez_repr.t (* `Temporary *)
+(*Maybe add signature*)
+type operation = {
+  shell : Operation.shell_header;
+  protocol_data : types_of_operation;
+}
 
 open Data_encoding
 
-let operation_repr_encoding =
+let types_of_operation_encoding =
   union
-    [
-      case
+    [ case
         (Tag 0)
         ~title:"Transaction"
         (obj6
@@ -25,19 +31,16 @@ let operation_repr_encoding =
            (req "destination" Account_repr.encoding)
            (req "fee" Tez_repr.encoding)
            (req "nonce" int32)
-           (req "difficulty" int32))
-        (function Transaction {source;amount;destination;fee;nonce;difficulty} -> Some (source,amount,destination,fee,nonce,difficulty))
-        (fun (source,amount,destination,fee,nonce,difficulty) -> Transaction {source;amount;destination;fee;nonce;difficulty});
+           (req "difficulty" int32)
+           )
+        (function Transaction {source; amount; destination; fee; nonce; difficulty} -> Some (source, amount, destination, fee, nonce, difficulty))
+        (function (source, amount, destination, fee, nonce, difficulty) -> Transaction {source; amount; destination; fee; nonce; difficulty} );
     ]
 
-let encoding = operation_repr_encoding
+let operation_encoding =
+  obj2
+    (req "shell" Operation.shell_header_encoding)
+    (req "protocol_data" types_of_operation_encoding)
 
-
-
-
-
-type packed_operation = {
-  shell : Operation.shell_header;
-  protocol_data : protocol_data;
-}
+let encoding = operation_encoding
 

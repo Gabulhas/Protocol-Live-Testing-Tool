@@ -6,6 +6,8 @@ open Alpha_context
 
 The apply_results data structure can be thought of as representing the "results of the application" of a set of operations to the current state of the blockchain. It includes information about the operations that were applied, refused, or delayed during the application process, as well as information about the updated state of the blockchain and any errors or warnings that occurred during the application proces
  *)
+let trace_encoding = make_trace_encoding error_encoding
+
 
 type block_metadata = {
   level : Level.compat_t;
@@ -56,5 +58,48 @@ type operation_result =
   | TransactionResult of {
       balance_updates : Receipt.balance_updates;
       operation_result : transaction_result;
-      internal_operation_results : packed_internal_operation_result list;
     }
+
+open Data_encoding
+
+let transaction_result_encoding =
+  union
+    [ case
+        (Tag 0)
+        ~title:"Applied"
+        (constant "applied")
+        (function Applied -> Some () | _ -> None)
+        (function () -> Applied);
+      case
+        (Tag 1)
+        ~title:"Backtracked"
+        (obj1 (opt "trace" trace_encoding))
+        (function Backtracked d -> Some d | _ -> None)
+        (function d -> Backtracked d);
+      case
+        (Tag 2)
+        ~title:"Failed"
+        (obj1 (req "trace" trace_encoding))
+        (function Failed d -> Some d | _ -> None)
+        (function d -> Failed d);
+      case
+        (Tag 3)
+        ~title:"Skipped"
+        (constant "failed")
+        (function Skipped -> Some () | _ -> None)
+        (function () -> Skipped)
+    ]
+
+
+
+let operation_result_encoding =
+  union
+    [ case
+        (Tag 0)
+        ~title:"TransactionResult"
+        (obj2
+           (req "balance_updates" Receipt.balance_updates_encoding)
+           (req "operation_result" transaction_result_encoding))
+        (function TransactionResult {balance_updates; operation_result} -> Some (balance_updates, operation_result) )
+        (function (balance_updates, operation_result) -> TransactionResult {balance_updates; operation_result} );
+    ]

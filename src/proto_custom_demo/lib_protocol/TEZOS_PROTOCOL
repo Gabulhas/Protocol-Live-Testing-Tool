@@ -20,6 +20,7 @@
 "NBits_repr",
 "Operation_repr",
 "Path_encoding",
+"Proof_of_work",
 "Raw_context_intf",
 "Raw_context",
 "Raw_level_repr",

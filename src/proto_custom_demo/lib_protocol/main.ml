@@ -13,13 +13,7 @@ let max_operation_data_length = 32 * 1024 (* 32kB *)
 (*Ignored*)
 let validation_passes = []
 
-(** Economic protocol-specific side information computed by the
-     protocol during the validation of a block. Should not include
-     information about the evaluation of operations which is handled
-     separately by {!operation_metadata}. To be used as an execution
-     trace by tools (client, indexer). Not necessary for
-     validation. *)
-(** Encoding for economic protocol-specific block metadata. *)
+
 type block_header_metadata = Apply_results.block_metadata
 let block_header_metadata_encoding =  Apply_results.block_metadata_encoding
 
@@ -28,108 +22,50 @@ let block_header_metadata_encoding =  Apply_results.block_metadata_encoding
 type operation_data = Operation_repr.operation
 
 (** Result o applying an operation *)
-type operation_receipt = Apply_results.operation_result list
+type operation_receipt = Apply_results.operation_result
 
-(** A fully parsed operation. *)
-type operation = Alpha_context.packed_operation = {
-  shell : Operation.shell_header;
-  protocol_data : operation_data;
+type operation = Alpha_context.operation
+let operation_receipt_encoding = Apply_results.operation_result_encoding
+
+let operation_data_encoding = Operation.encoding
+
+let operation_data_and_receipt_encoding =
+  (* we could merge data and receipt encoding for a lighter json *)
+  Data_encoding.(
+    obj2 (req "data" operation_data_encoding) (req "receipt" operation_receipt_encoding))
+
+let acceptable_passes _op = Some 0
+
+let relative_position_within_block _a _b = 0
+
+type validation_state = {
+  chain_id : Chain_id.t;
+  ctxt : Alpha_context.t;
+  op_count : int;
 }
 
-  (** Encoding for economoic protocol-specific operation data. *)
-(*val operation_data_encoding : operation_data Data_encoding.t*)
+let begin_application chain_id predecessor_context predecessor_timestamp predecessor_fitness (block_header: block_header) =
+    let level = block_header.shell.level
 
-  (** Encoding for eonomic protocol-specific operation receipts. *)
-(*val operation_receipt_encoding : operation_receipt Data_encoding.t*)
-let operation_receipt_encoding = () 
+    
 
-(** Encoding that mixes an operation data and its receipt. *)
-(*val operation_data_and_receipt_encoding :
-    (operation_data * operation_receipt) Data_encoding.t*)
-
-let operation_data_and_receipt_encoding = ()
-
-(*
-let operation_data_encoding = Alpha_context.Operation.protocol_data_encoding
+    (*
+  let level = block_header.shell.level in
+  let fitness = predecessor_fitness in
+  let timestamp = block_header.shell.timestamp in
+  Alpha_context.prepare ~level ~predecessor_timestamp ~timestamp ~fitness ctxt
+  >>=? fun (ctxt, migration_balance_updates) ->
+  Apply.begin_application ctxt chain_id block_header predecessor_timestamp
+  >|=? fun (ctxt, baker, block_delay) ->
+  let mode =
+    Application
+      {block_header; baker = Signature.Public_key.hash baker; block_delay}
+  in
+  {mode; chain_id; ctxt; op_count = 0; migration_balance_updates}
 *)
-let operation_data_encoding = ()
 
-(** [acceptable_passes op] lists the validation passes in which the
-     input operation [op] can appear. For instance, it results in
-[[0]] if [op] only belongs to the first pass. An answer of [[]]
-means that the [op] is ill-formed and cannot be included at
-     all in a block. *)
-(*val acceptable_passes : operation -> int list*)
-let acceptable_passes op = []
-
-(** [relative_position_within_block op1 op2] provides a partial and
-     strict order of operations within a block. It is intended to be
-     used as an argument to {!List.sort} (and other sorting/ordering
-     functions) to arrange a set of operations into a sequence, the
-     order of which is valid for the protocol.
-
-     A negative (respectively, positive) results means that [op1]
-     should appear before (and, respectively, after) [op2] in a
-     block. This function does not provide a total ordering on the
-     operations: a result of [0] entails that the protocol does not
-     impose any preferences to the order in which [op1] and [op2]
-     should be included in a block.
-
-     {b Caveat Emptor!} [relative_position_within_block o1 o2 = 0]
-     does NOT imply that [o1] is equal to [o2] in any way.
-     Consequently, it {e MUST NOT} be used as a [compare] component of
-     an {!Stdlib.Map.OrderedType}, or any such collection which relies
-     on a total comparison function. *)
-
-(*val relative_position_within_block : operation -> operation -> int*)
-let relative_position_within_block a b = 0
-
-(** A functional state that is transmitted through the steps of a
-block validation sequence: it can be created by any of the
-[begin_x] functions below, and its final value is produced by
-{!finalize_block}. It must retain the current state of the store,
-and it can also contain additional information that must be
-remembered during the validation process. Said extra content must
-however be immutable: validator or baker implementations are
-allowed to pause, replay or backtrack throughout validation
-steps. *)
-type validation_state
-
-(** [begin_partial_application cid ctxt] checks that a block is
-well-formed in a given context. This function should run quickly,
-as its main use is to reject bad blocks from the chain as early
-as possible. The input [ancestor_context] is expected to result
-from the application of an ancestor block of the current head
-with the same economic protocol. Said ancestor block is also
-required to be more recent (i.e., it has a greater level), than
-the current head's "last_allowed_fork_level".
-
-The resulting `validation_state` will be used for multi-pass
-validation. *)
-(*
-val begin_partial_application :
-    chain_id:Chain_id.t ->
-        ancestor_context:Context.t ->
-            predecessor_timestamp:Time.t ->
-                predecessor_fitness:Fitness.t ->
-                    block_header ->
-                        validation_state tzresult Lwt.t
-                        *)
 
 let begin_partial_application chain_id ancestor_context predecessor_timestamp predecessor_fitness block_header =
-    ()
-
-    (** [begin_application chain_id ... bh] defines the first step in a
-    block validation sequence. It initializes a validation context
-    for validating a block, whose header is [bh]. *)
-    (*val begin_application :
-        chain_id:Chain_id.t ->
-            predecessor_context:Context.t ->
-                predecessor_timestamp:Time.t ->
-                    predecessor_fitness:Fitness.t ->
-                        block_header ->
-                            validation_state tzresult Lwt.t*)
-let begin_application chain_id predecessor_context predecessor_timestamp predecessor_fitness block_header =
     ()
 
     (** [begin_construction] initializes a validation context for

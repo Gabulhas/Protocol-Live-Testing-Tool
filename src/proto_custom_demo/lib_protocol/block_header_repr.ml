@@ -21,18 +21,14 @@ type shell_header = {
 }
 *)
 type contents = {
-    time: Time_repr.t;
-    nBits: NBits_repr.t;
-    nonce: Int64.t;
-    (*Merkle tree*)
+  time : Time_repr.t;
+  nBits : NBits_repr.t;
+  nonce : Int64.t; (*Merkle tree*)
 }
 
 type protocol_data = contents
 
-type t = {
-    shell: Block_header.shell_header;
-    protocol_data: contents;
-}
+type t = {shell : Block_header.shell_header; protocol_data : contents}
 
 type block_header = t
 
@@ -44,24 +40,12 @@ let raw_encoding = Block_header.encoding
 
 let shell_header_encoding = Block_header.shell_header_encoding
 
-
-
 let contents_encoding =
   let open Data_encoding in
   def "block_header.custom.encoding"
   @@ conv
-       (fun {
-           time;
-           nBits;
-           nonce;
-            } ->
-         (time, nBits, nonce))
-       (fun (time, nBits,nonce) ->
-         {
-           time;
-           nBits;
-           nonce;
-         })
+       (fun {time; nBits; nonce} -> (time, nBits, nonce))
+       (fun (time, nBits, nonce) -> {time; nBits; nonce})
        (obj3
           (req "time" Time_repr.encoding)
           (req "nBits" NBits_repr.encoding)
@@ -90,41 +74,32 @@ let encoding =
 (** Constants *)
 
 let max_header_length =
-    let fake_shell =
-        {
-            Block_header.level = 0l;
+  let fake_shell =
+    {
+      Block_header.level = 0l;
       proto_level = 0;
       predecessor = Block_hash.zero;
       timestamp = Time.of_seconds 0L;
       validation_passes = 0;
       operations_hash = Operation_list_list_hash.zero;
-      fitness = Fitness_repr.to_raw (Fitness_repr.zero);
+      fitness = Fitness_repr.to_raw Fitness_repr.zero;
       context = Context_hash.zero;
-       }
-   and fake_contents =
-       {
-           time= Time_repr.zero ;
-        nBits= NBits_repr.zero;
-        nonce= 0L;
-        }
+    }
+  and fake_contents =
+    {time = Time_repr.zero; nBits = NBits_repr.zero; nonce = 0L}
   in
   Data_encoding.Binary.length
     encoding
-    {
-        shell = fake_shell;
-      protocol_data = fake_contents;
-       }
+    {shell = fake_shell; protocol_data = fake_contents}
 
-    (** Header parsing entry point  *)
+(** Header parsing entry point  *)
 
 let hash_raw = Block_header.hash
 
 let hash {shell; protocol_data} =
-    Block_header.hash
+  Block_header.hash
     {
-        shell;
+      shell;
       protocol_data =
-          Data_encoding.Binary.to_bytes_exn protocol_data_encoding protocol_data;
-}
-
-
+        Data_encoding.Binary.to_bytes_exn protocol_data_encoding protocol_data;
+    }

@@ -112,8 +112,4 @@ module Account = struct
         let name = ["counter"]
       end)
       (Encoding.Z)
-
-  (* Consume gas for serialization and deserialization of expr in this
-     module *)
-
 end

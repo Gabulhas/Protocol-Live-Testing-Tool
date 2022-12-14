@@ -49,6 +49,7 @@ Misc
 NBits_repr
 Operation_repr
 Path_encoding
+Proof_of_work
 Raw_context_intf
 Raw_context
 Raw_level_repr
@@ -119,6 +120,7 @@ misc.ml
 nBits_repr.ml
 operation_repr.ml
 path_encoding.ml
+proof_of_work.ml
 raw_context_intf.ml
 raw_context.ml
 raw_context.mli
@@ -171,6 +173,7 @@ misc.ml
 nBits_repr.ml
 operation_repr.ml
 path_encoding.ml
+proof_of_work.ml
 raw_context_intf.ml
 raw_context.ml
 raw_context.mli
@@ -229,6 +232,7 @@ misc.ml
 nBits_repr.ml
 operation_repr.ml
 path_encoding.ml
+proof_of_work.ml
 raw_context_intf.ml
 raw_context.ml
 raw_context.mli

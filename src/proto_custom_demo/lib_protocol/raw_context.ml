@@ -29,6 +29,7 @@ module Int_set = Set.Make (Compare.Int)
 type t = {
   context : Context.t;
   timestamp : Time.t;
+  (*I define fitness as the "how close is the difficulty"*)
   fitness : Int64.t;
   fees : Tez_repr.t;
   rewards : Tez_repr.t;
