@@ -13,6 +13,7 @@
 "Error",
 "Fitness_repr",
 "Gas_limit_repr",
+"Init_storage",
 "Level_repr",
 "Main",
 "Manager_repr",

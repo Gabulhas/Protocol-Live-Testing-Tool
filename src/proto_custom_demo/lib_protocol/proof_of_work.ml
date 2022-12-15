@@ -48,21 +48,9 @@ let mine_block (block : Alpha_context.Block_header.t) (target : int64) :
   loop nonce |> Data_encoding.Binary.of_bytes_opt int64
 
 (* Define the function to check if a block's hash is below a target value *)
-let is_valid_block_hash block  target =
+let is_valid_block_hash block target =
   (* Calculate the hash for the block using the Blake2b hash function *)
-  let block_hash =
-    H.hash_bytes
-      [
-        Data_encoding.Binary.to_bytes_exn
-          Alpha_context.Block_header.encoding
-          block;
-      ]
-  in
-  let block_hash_bytes = H.to_bytes block_hash in
-  let open Compare.Bytes in
-  let open Data_encoding in
-  let open Lwt in
-  let target_bytes = Data_encoding.Binary.to_bytes_exn int64 target in
+  let bytes = block |> Block_header_repr.hash |> Block_hash.to_bytes in
+  let word = TzEndian.get_int64 bytes 0 in
+  Lwt.return Compare.Uint64.(word <= target)
 
-  Lwt.return (block_hash_bytes < target_bytes)
-  (* Return whether the hash is below the target *)

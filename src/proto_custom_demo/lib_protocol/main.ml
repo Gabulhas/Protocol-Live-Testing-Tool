@@ -44,8 +44,11 @@ type validation_state = {
   op_count : int;
 }
 
-let begin_application chain_id predecessor_context predecessor_timestamp predecessor_fitness (block_header: block_header) =
-    let level = block_header.shell.level
+let begin_application chain_id (predecessor_context: Context.t) predecessor_timestamp predecessor_fitness (block_header: block_header) =
+    let level = block_header.shell.level in
+    let o = pred
+    Proof_of_work.is_valid_block_hash block_header  >>=
+
 
     
 
