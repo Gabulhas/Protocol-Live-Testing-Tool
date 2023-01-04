@@ -42,6 +42,7 @@ Constants_repr
 Error
 Fitness_repr
 Gas_limit_repr
+Header_storage
 Init_storage
 Level_repr
 Main
@@ -62,8 +63,10 @@ Storage_description
 Storage_functors
 Storage
 Storage_sigs
+Target_repr
 Tez_repr
 Time_repr
+Utils
   ))
 
 (library
@@ -113,6 +116,7 @@ error.ml
 error.mli
 fitness_repr.ml
 gas_limit_repr.ml
+header_storage.ml
 init_storage.ml
 level_repr.ml
 main.ml
@@ -137,8 +141,10 @@ storage_functors.ml
 storage_functors.mli
 storage.ml
 storage_sigs.ml
+target_repr.ml
 tez_repr.ml
 time_repr.ml
+utils.ml
   (:src_dir TEZOS_PROTOCOL))
  (action (run %{bin:octez-protocol-compiler} -no-hash-check -warn-error +a .)))
 
@@ -167,6 +173,7 @@ error.ml
 error.mli
 fitness_repr.ml
 gas_limit_repr.ml
+header_storage.ml
 init_storage.ml
 level_repr.ml
 main.ml
@@ -191,8 +198,10 @@ storage_functors.ml
 storage_functors.mli
 storage.ml
 storage_sigs.ml
+target_repr.ml
 tez_repr.ml
 time_repr.ml
+utils.ml
  (:src_dir TEZOS_PROTOCOL))
  (action
   (with-stdout-to
@@ -227,6 +236,7 @@ error.ml
 error.mli
 fitness_repr.ml
 gas_limit_repr.ml
+header_storage.ml
 init_storage.ml
 level_repr.ml
 main.ml
@@ -251,8 +261,10 @@ storage_functors.ml
 storage_functors.mli
 storage.ml
 storage_sigs.ml
+target_repr.ml
 tez_repr.ml
 time_repr.ml
+utils.ml
   (:src_dir TEZOS_PROTOCOL))
  (action
   (with-stdout-to

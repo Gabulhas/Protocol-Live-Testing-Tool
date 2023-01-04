@@ -38,16 +38,58 @@ let acceptable_passes _op = Some 0
 
 let relative_position_within_block _a _b = 0
 
+type validation_mode =
+  | Application of {
+      block_header : Alpha_context.Block_header.t;
+    }
+  | Partial_application of {
+      block_header : Alpha_context.Block_header.t;
+    }
+  | Partial_construction of {predecessor : Block_hash.t}
+  | Full_construction of {
+      predecessor : Block_hash.t;
+      protocol_data : Alpha_context.Block_header.contents;
+    }
+
 type validation_state = {
+  mode : validation_mode;
   chain_id : Chain_id.t;
   ctxt : Alpha_context.t;
   op_count : int;
 }
 
+
+
+(*
+THIS IS USED TO INIT THE CHAIN, LIKE THE GENESIS BLOCK AND STUFF
+
+
+ *)
+let init ctxt block_header =
+  let level = block_header.Block_header.level in
+  let fitness = block_header.fitness in
+  let timestamp = block_header.timestamp in
+  Alpha_context.prepare_first_block ~typecheck ~level ~timestamp ~fitness ctxt
+  >|=? fun ctxt -> Alpha_context.finalize ctxt
+
+
 let begin_application chain_id (predecessor_context: Context.t) predecessor_timestamp predecessor_fitness (block_header: block_header) =
     let level = block_header.shell.level in
-    let o = pred
-    Proof_of_work.is_valid_block_hash block_header  >>=
+    (*
+    TODO: check if epoch is %2016, so the the target input in the function should reflect the new target
+     *)
+    predecessor_context
+
+    Proof_of_work.check_block block_header  >>= fun is_valid ->
+    if !is_valid then
+        Proof_of_work.invalid_block_hash ()
+    else
+        let mode = Application {block_header} in
+
+
+        
+        
+        
 
 
     

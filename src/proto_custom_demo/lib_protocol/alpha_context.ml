@@ -34,6 +34,8 @@ type public_key_hash = Signature.Public_key_hash.t
 type signature = Signature.t
 
 
+module Fitness = Fitness
+module Raw_context = Raw_context
 module Receipt = Receipt_repr
 
 module Fitness = struct
@@ -89,4 +91,17 @@ module Level = struct
   include Level_repr
 end
 
+
+module Proof_of_work = Proof_of_work
+
+let finalize ?commit_message:message c =
+  let fitness = Fitness.from_int64 (Fitness.current c) in
+  let context = Raw_context.context c in
+  {
+    Updater.context;
+    fitness;
+    message;
+    max_operations_ttl = 60;
+    last_allowed_fork_level = 0l
+  }
 

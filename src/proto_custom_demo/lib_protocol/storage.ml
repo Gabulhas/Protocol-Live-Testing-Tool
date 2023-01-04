@@ -113,3 +113,19 @@ module Account = struct
       end)
       (Encoding.Z)
 end
+
+
+module Target =
+  Make_single_data_storage (Registered) (Raw_context)
+    (struct
+      let name = ["target"]
+    end)
+    (Target_repr)
+
+module EpochTime =
+  Make_single_data_storage (Registered) (Raw_context)
+    (struct
+      let name = ["EpochTime"]
+    end)
+    (Time)
+

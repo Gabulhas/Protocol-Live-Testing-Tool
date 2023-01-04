@@ -1,3 +1,12 @@
+(*
+TODO: I changed this temporarly to a Single "threaded" way
+Cause I can't figure out how to use Lwt.pick
+I have a repo that implements the mining
+
+
+ *)
+open Lwt
+
 module H =
   Blake2B.Make
     (Base58)
@@ -11,46 +20,82 @@ module H =
       let size = Some 64
     end)
 
-(* Define the mining function *)
-let mine_block (block : Alpha_context.Block_header.t) (target : int64) :
-    int64 option =
-  (* Set the initial nonce for the block to 0 *)
-  let open Data_encoding in
-  let open Compare.Bytes in
-  let nonce = Int64.zero in
-  let target_bytes = Data_encoding.Binary.to_bytes_exn int64 target in
+let double_hash_bytes b =
+  b |> Block_header_repr.hash |> Block_hash.to_bytes |> fun a ->
+  H.hash_bytes [a] |> H.to_bytes
 
-  let shell = block.shell in
-  let contents = block.protocol_data in
+let bytes_to_string b = b |> Hex.of_bytes |> function `Hex a -> a
 
-  (* Keep generating hashes until we find a hash that is below the target value *)
-  let rec loop nonce =
-    (* Calculate the hash for the block using the Blake2b hash function *)
-    let new_protocol_data = {contents with nonce} in
-    let temp_block : Alpha_context.Block_header.t =
-      {shell; protocol_data = new_protocol_data}
-    in
-    let block_hash =
-      H.hash_bytes
-        [
-          Data_encoding.Binary.to_bytes_exn
-            Alpha_context.Block_header.encoding
-            temp_block;
-        ]
-    in
-    let block_hash_bytes = H.to_bytes block_hash in
+(* Define a function for mining a block with a given nonce, which involves hashing the
+ * block and checking if the resulting hash satisfies a certain condition (in this case,
+ * if the first three characters of the hash are "000"). If a valid block is found,
+ * return it as a Some value. Otherwise, return None. *)
+let mine_nonce ({shell; protocol_data} : Block_header_repr.t) nonce target :
+    int64 option Lwt.t =
+  let protocol_data = {protocol_data with nonce} in
+  let hash = double_hash_bytes {shell; protocol_data} in
+  let open Compare.Int in
+  if Bytes.compare hash target <= 0 then Lwt.return (Some nonce)
+  else Lwt.return None
 
-    (* If the hash is below the target, we have found a valid block hash *)
-    if block_hash_bytes < target_bytes then block_hash_bytes
-      (* If the hash is not below the target, increment the nonce and try again *)
-    else loop (Int64.succ nonce)
+let mine_block_loop (block : Block_header_repr.t) target (start, finish) : int64 option t=
+  let rec loop b nonce =
+  let open Compare.Int64 in
+
+    if nonce >= finish then Lwt.return_none
+
+    else
+      mine_nonce b nonce target >>= fun res ->
+      match res with
+      | Some nonce -> Lwt.return (Some nonce)
+      | None -> loop b (Int64.succ nonce)
   in
-  loop nonce |> Data_encoding.Binary.of_bytes_opt int64
+  loop block start
 
-(* Define the function to check if a block's hash is below a target value *)
-let is_valid_block_hash block target =
-  (* Calculate the hash for the block using the Blake2b hash function *)
-  let bytes = block |> Block_header_repr.hash |> Block_hash.to_bytes in
-  let word = TzEndian.get_int64 bytes 0 in
-  Lwt.return Compare.Uint64.(word <= target)
+let get_range s e succ =
+  let rec aux a = if Int64.equal a e then [] else a :: aux (succ a) in
+  aux s
 
+let succ n = n + 1
+
+let partition_load workers =
+  let open Compare.Int64 in
+  let open Int64 in
+  let chuck_size = Int64.div max_int workers in
+  let rec aux i =
+    if i < workers then
+      let start = Int64.mul i chuck_size in
+      let finish = Int64.sub (Int64.add chuck_size start) 1L in
+      (start, finish) :: aux (Int64.succ i)
+    else []
+  in
+  aux 0L
+
+(* Define a function for starting the worker threads and running the mining tasks. *)
+(*
+let mine_blocks block target workers =
+  let tasks =
+    List.mapi
+      (fun _ rng -> mine_block_loop block target rng)
+      (partition_load workers)
+  in
+  Lwt_condition
+    
+
+  Lwt.pick tasks >>= fun a ->
+  Lwt.return a
+*)
+let mine_block block target =
+    mine_block_loop block target (Int64.min_int, Int64.max_int)
+
+
+type error += InvalidBlockHash
+
+
+let invalid_block_hash () = error InvalidBlockHash
+
+
+let check_block block target =
+    match (Target_repr.to_bytes target) with
+    | Some a -> Lwt.return (Compare.Bytes.(<=) (double_hash_bytes block) a)
+    | None -> raise (Failure "TODO:") 

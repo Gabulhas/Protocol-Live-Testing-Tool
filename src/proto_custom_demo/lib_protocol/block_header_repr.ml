@@ -22,7 +22,7 @@ type shell_header = {
 *)
 type contents = {
   time : Time_repr.t;
-  nBits : NBits_repr.t;
+  target : Z.t; (*Should be a 256 bit integer*)
   nonce : Int64.t; (*Merkle tree*)
 }
 
@@ -44,11 +44,11 @@ let contents_encoding =
   let open Data_encoding in
   def "block_header.custom.encoding"
   @@ conv
-       (fun {time; nBits; nonce} -> (time, nBits, nonce))
-       (fun (time, nBits, nonce) -> {time; nBits; nonce})
+       (fun {time; target; nonce} -> (time, target, nonce))
+       (fun (time, target, nonce) -> {time; target; nonce})
        (obj3
           (req "time" Time_repr.encoding)
-          (req "nBits" NBits_repr.encoding)
+          (req "target" Data_encoding.z)
           (req "nonce" int64))
 
 let protocol_data_encoding = contents_encoding
@@ -86,7 +86,7 @@ let max_header_length =
       context = Context_hash.zero;
     }
   and fake_contents =
-    {time = Time_repr.zero; nBits = NBits_repr.zero; nonce = 0L}
+    {time = Time_repr.zero; target = Target_repr.zero; nonce = 0L}
   in
   Data_encoding.Binary.length
     encoding
@@ -103,3 +103,6 @@ let hash {shell; protocol_data} =
       protocol_data =
         Data_encoding.Binary.to_bytes_exn protocol_data_encoding protocol_data;
     }
+
+let to_bytes = let open Data_encoding in Binary.to_bytes_exn encoding 
+let of_bytes = let open Data_encoding in Binary.of_bytes_opt encoding 

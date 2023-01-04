@@ -13,6 +13,7 @@
 "Error",
 "Fitness_repr",
 "Gas_limit_repr",
+"Header_storage",
 "Init_storage",
 "Level_repr",
 "Main",
@@ -33,7 +34,9 @@
 "Storage_functors",
 "Storage",
 "Storage_sigs",
+"Target_repr",
 "Tez_repr",
-"Time_repr"
+"Time_repr",
+"Utils"
          ]
 }
