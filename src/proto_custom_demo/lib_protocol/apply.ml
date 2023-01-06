@@ -11,8 +11,6 @@ let verify_operation ctxt operation=
         Account.check_counter_increment ctxt source counter >>=? fun () ->
         Operation.check_signature source operation >>=? fun () ->
 
-
-
     | Coinbase {} _
             
 

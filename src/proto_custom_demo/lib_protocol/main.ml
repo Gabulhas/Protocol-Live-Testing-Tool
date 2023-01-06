@@ -76,6 +76,7 @@ let begin_application chain_id (predecessor_context: Context.t) predecessor_time
     let level = block_header.shell.level in
     (*
     TODO: check if epoch is %2016, so the the target input in the function should reflect the new target
+
      *)
     predecessor_context
 

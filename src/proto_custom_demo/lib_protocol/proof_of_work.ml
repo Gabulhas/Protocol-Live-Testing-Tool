@@ -1,7 +1,10 @@
 (*
-TODO: I changed this temporarly to a Single "threaded" way
-Cause I can't figure out how to use Lwt.pick
-I have a repo that implements the mining
+
+TODO: REMOVE THE MINING FROM HERE
+the protocol part should not have this, this should be in bin_node instead
+
+
+also, use the multicore version instead
 
 
  *)
