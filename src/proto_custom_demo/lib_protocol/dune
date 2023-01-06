@@ -50,6 +50,7 @@ Manager_repr
 Misc
 NBits_repr
 Operation_repr
+Parameters_repr
 Path_encoding
 Proof_of_work
 Raw_context_intf
@@ -125,6 +126,7 @@ manager_repr.ml
 misc.ml
 nBits_repr.ml
 operation_repr.ml
+parameters_repr.ml
 path_encoding.ml
 proof_of_work.ml
 raw_context_intf.ml
@@ -182,6 +184,7 @@ manager_repr.ml
 misc.ml
 nBits_repr.ml
 operation_repr.ml
+parameters_repr.ml
 path_encoding.ml
 proof_of_work.ml
 raw_context_intf.ml
@@ -245,6 +248,7 @@ manager_repr.ml
 misc.ml
 nBits_repr.ml
 operation_repr.ml
+parameters_repr.ml
 path_encoding.ml
 proof_of_work.ml
 raw_context_intf.ml

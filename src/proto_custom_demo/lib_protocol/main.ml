@@ -52,10 +52,10 @@ type validation_mode =
     }
 
 type validation_state = {
-  mode : validation_mode;
   chain_id : Chain_id.t;
   ctxt : Alpha_context.t;
   op_count : int;
+  mode: validation_mode;
 }
 
 
@@ -67,9 +67,8 @@ THIS IS USED TO INIT THE CHAIN, LIKE THE GENESIS BLOCK AND STUFF
  *)
 let init ctxt block_header =
   let level = block_header.Block_header.level in
-  let fitness = block_header.fitness in
   let timestamp = block_header.timestamp in
-  Alpha_context.prepare_first_block ~typecheck ~level ~timestamp ~fitness ctxt
+  Alpha_context.prepare_first_block ctxt ~level ~timestamp 
   >|=? fun ctxt -> Alpha_context.finalize ctxt
 
 
@@ -85,6 +84,10 @@ let begin_application chain_id (predecessor_context: Context.t) predecessor_time
         Proof_of_work.invalid_block_hash ()
     else
         let mode = Application {block_header} in
+    {mode; chain_id; ctxt; op_count = 0}
+     
+    
+    
 
 
         
@@ -164,8 +167,41 @@ val apply_operation :
         operation ->
             (validation_state * operation_receipt) tzresult Lwt.t
             *)
-let apply_operation validation_state operation =
-    ()
+let apply_operation ({mode; chain_id; ctxt; op_count; _} as data)
+    (operation : Alpha_context.packed_operation) =
+  match mode with
+  | Partial_application _
+    when not
+           (List.exists
+              (Compare.Int.equal 0)
+              (Alpha_context.Operation.acceptable_passes operation)) ->
+      (* Multipass validation only considers operations in pass 0. *)
+      let op_count = op_count + 1 in
+      return ({data with ctxt; op_count}, No_operation_metadata)
+  | _ ->
+      let {shell; protocol_data = Operation_data protocol_data} = operation in
+      let operation : _ Alpha_context.operation = {shell; protocol_data} in
+      let (predecessor, baker) =
+        match mode with
+        | Partial_application
+            {block_header = {shell = {predecessor; _}; _}; baker}
+        | Application {block_header = {shell = {predecessor; _}; _}; baker}
+        | Full_construction {predecessor; baker; _} ->
+            (predecessor, baker)
+        | Partial_construction {predecessor} ->
+            (predecessor, Signature.Public_key_hash.zero)
+      in
+      Apply.apply_operation
+        ctxt
+        chain_id
+        Optimized
+        predecessor
+        baker
+        (Alpha_context.Operation.hash operation)
+        operation
+      >|=? fun (ctxt, result) ->
+      let op_count = op_count + 1 in
+      ({data with ctxt; op_count}, Operation_metadata result)
 
 
     (** [finalize_block vs] finalizes the context resulting from the
@@ -204,7 +240,10 @@ implemented. *)
                 validation_result tzresult Lwt.t
 
                 *)
+
 let init chain_id context header = ()
+(*TODO: Search for "EPOCH"*)
+
 
 (** [value_of_key chain_id predecessor_context
 predecessor_timestamp predecessor_level predecessor_fitness

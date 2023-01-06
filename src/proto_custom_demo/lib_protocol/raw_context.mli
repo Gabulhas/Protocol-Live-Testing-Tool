@@ -22,6 +22,34 @@ type t
 type root = t
 
 
+(** Retrieves the state of the database and gives its abstract view.
+    It also returns wether this is the first block validated
+    with this version of the protocol. *)
+val prepare :
+  Context.t ->
+  level:Int32.t ->
+  timestamp:Time.t ->
+  t tzresult Lwt.t
+
+type previous_protocol = Genesis of Parameters_repr.t
+
+val prepare_first_block :
+  Context.t ->
+  level:int32 ->
+  timestamp:Time.t ->
+  (previous_protocol * t) tzresult Lwt.t
+
+val activate : t -> Protocol_hash.t -> t Lwt.t
+
+
+
+
+
+
+
+
+
+
 type key = string list
 
 type value = bytes

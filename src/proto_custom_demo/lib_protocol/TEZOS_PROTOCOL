@@ -21,6 +21,7 @@
 "Misc",
 "NBits_repr",
 "Operation_repr",
+"Parameters_repr",
 "Path_encoding",
 "Proof_of_work",
 "Raw_context_intf",

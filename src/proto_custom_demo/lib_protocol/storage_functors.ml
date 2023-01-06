@@ -356,6 +356,7 @@ end
 
 (* Internal-use-only version of {!Make_indexed_carbonated_data_storage} to
    expose fold_keys_unaccounted *)
+(*
 module Make_indexed_carbonated_data_storage_INTERNAL
     (C : Raw_context.T)
     (I : INDEX)
@@ -581,6 +582,7 @@ module Make_carbonated_data_set_storage (C : Raw_context.T) (I : INDEX) :
 
   let fold_keys_unaccounted = M.fold_keys_unaccounted
 end
+  *)
 
 module Make_indexed_data_snapshotable_storage
     (C : Raw_context.T)
@@ -975,6 +977,7 @@ module Make_indexed_subcontext (C : Raw_context.T) (I : INDEX) :
       [@@coq_axiom_with_reason "stack overflow in Coq"]
   end
 
+  (*
   module Make_carbonated_map (N : NAME) (V : VALUE) :
     Non_iterable_indexed_carbonated_data_storage
       with type t = t
@@ -1089,7 +1092,7 @@ module Make_indexed_subcontext (C : Raw_context.T) (I : INDEX) :
         (register_named_subcontext Raw_context.description N.name)
         V.encoding
       [@@coq_axiom_with_reason "stack overflow in Coq"]
-  end
+  end*)
 end
 
 module type WRAPPER = sig

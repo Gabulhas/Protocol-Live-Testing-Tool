@@ -34,7 +34,6 @@ type public_key_hash = Signature.Public_key_hash.t
 type signature = Signature.t
 
 
-module Fitness = Fitness
 module Raw_context = Raw_context
 module Receipt = Receipt_repr
 
@@ -94,6 +93,10 @@ end
 
 module Proof_of_work = Proof_of_work
 
+let prepare_first_block = Init_storage.prepare_first_block
+let prepare = Init_storage.prepare
+
+(*
 let finalize ?commit_message:message c =
   let fitness = Fitness.from_int64 (Fitness.current c) in
   let context = Raw_context.context c in
@@ -104,4 +107,4 @@ let finalize ?commit_message:message c =
     max_operations_ttl = 60;
     last_allowed_fork_level = 0l
   }
-
+*)

@@ -59,6 +59,7 @@ type operation_result =
       balance_updates : Receipt.balance_updates;
       operation_result : transaction_result;
     }
+(*TODO: add coinbase*)
 
 open Data_encoding
 

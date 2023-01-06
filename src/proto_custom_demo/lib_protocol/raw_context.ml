@@ -28,32 +28,30 @@ module Int_set = Set.Make (Compare.Int)
 
 type t = {
   context : Context.t;
+  constants : Constants_repr.parametric;
   timestamp : Time.t;
-  (*I define fitness as the "how close is the difficulty"*)
-  fitness : Int64.t;
-  fees : Tez_repr.t;
-  rewards : Tez_repr.t;
+  level : Int32.t;
+
   internal_nonce : int;
-  internal_nonces_used : Int_set.t; (*TODO: add PoW specific stuff*)
-  remaining_operation_gas: Gas_limit_repr.Arith.fp;
-  unlimited_operation_gas: bool
+  internal_nonces_used : Int_set.t;
+      (*TODO: add PoW specific stuff or remove completely*)
+  remaining_operation_gas : Gas_limit_repr.Arith.fp;
+  unlimited_operation_gas : bool;
 }
 
 let[@inline] context ctxt = ctxt.context
 
+let[@inline] constants ctxt = ctxt.constants
+
 let[@inline] timestamp ctxt = ctxt.timestamp
-
-let[@inline] fitness ctxt = ctxt.fitness
-
-let[@inline] fees ctxt = ctxt.fees
-
-let[@inline] rewards ctxt = ctxt.rewards
 
 let[@inline] internal_nonce ctxt = ctxt.internal_nonce
 
 let[@inline] internal_nonces_used ctxt = ctxt.internal_nonces_used
 
 let[@inline] update_context ctxt context = {ctxt with context}
+
+let[@inline] update_constants ctxt constants = {ctxt with constants}
 
 let[@inline] remaining_operation_gas ctxt = ctxt.remaining_operation_gas
 
@@ -76,7 +74,6 @@ type error += Block_quota_exceeded (* `Temporary *)
 
 type error += Operation_quota_exceeded (* `Temporary *)
 
-
 (* This key should always be populated for every version of the
    protocol.  It's absence meaning that the context is empty. *)
 let version_key = ["version"]
@@ -92,6 +89,156 @@ let constants_key = [version; "constants"]
 
 let protocol_param_key = ["protocol_parameters"]
 
+let get_first_level ctxt =
+  Context.find ctxt first_level_key
+  >|= function
+  | None ->
+      storage_error (Missing_key (first_level_key, Get))
+  | Some bytes -> (
+    match Data_encoding.Binary.of_bytes_opt Raw_level_repr.encoding bytes with
+    | None ->
+        storage_error (Corrupted_data first_level_key)
+    | Some level ->
+        ok level )
+
+let set_first_level ctxt level =
+  let bytes =
+    Data_encoding.Binary.to_bytes_exn Raw_level_repr.encoding level
+  in
+  Context.add ctxt first_level_key bytes >|= ok
+
+type error += Failed_to_parse_parameter of bytes
+
+type error += Failed_to_decode_parameter of Data_encoding.json * string
+
+let () =
+  register_error_kind
+    `Temporary
+    ~id:"context.failed_to_parse_parameter"
+    ~title:"Failed to parse parameter"
+    ~description:"The protocol parameters are not valid JSON."
+    ~pp:(fun ppf bytes ->
+      Format.fprintf
+        ppf
+        "@[<v 2>Cannot parse the protocol parameter:@ %s@]"
+        (Bytes.to_string bytes))
+    Data_encoding.(obj1 (req "contents" bytes))
+    (function Failed_to_parse_parameter data -> Some data | _ -> None)
+    (fun data -> Failed_to_parse_parameter data) ;
+  register_error_kind
+    `Temporary
+    ~id:"context.failed_to_decode_parameter"
+    ~title:"Failed to decode parameter"
+    ~description:"Unexpected JSON object."
+    ~pp:(fun ppf (json, msg) ->
+      Format.fprintf
+        ppf
+        "@[<v 2>Cannot decode the protocol parameter:@ %s@ %a@]"
+        msg
+        Data_encoding.Json.pp
+        json)
+    Data_encoding.(obj2 (req "contents" json) (req "error" string))
+    (function
+      | Failed_to_decode_parameter (json, msg) -> Some (json, msg) | _ -> None)
+    (fun (json, msg) -> Failed_to_decode_parameter (json, msg))
+
+let get_proto_param ctxt =
+  Context.find ctxt protocol_param_key >>= function
+  | None -> failwith "Missing protocol parameters."
+  | Some bytes -> (
+      match Data_encoding.Binary.of_bytes_opt Data_encoding.json bytes with
+      | None -> fail (Failed_to_parse_parameter bytes)
+      | Some json -> (
+          Context.remove ctxt protocol_param_key >|= fun ctxt ->
+          match Data_encoding.Json.destruct Parameters_repr.encoding json with
+          | exception (Data_encoding.Json.Cannot_destruct _ as exn) ->
+              Format.kasprintf
+                failwith
+                "Invalid protocol_parameters: %a %a"
+                (fun ppf -> Data_encoding.Json.print_error ppf)
+                exn
+                Data_encoding.Json.pp
+                json
+          | param -> ok (param, ctxt)))
+
+let add_constants ctxt constants =
+  let bytes =
+    Data_encoding.Binary.to_bytes_exn
+      Constants_repr.parametric_encoding
+      constants
+  in
+  Context.add ctxt constants_key bytes
+
+let get_constants ctxt =
+  Context.find ctxt constants_key >|= function
+  | None -> failwith "Internal error: cannot read constants in context."
+  | Some bytes -> (
+      match
+        Data_encoding.Binary.of_bytes_opt
+          Constants_repr.parametric_encoding
+          bytes
+      with
+      | None -> failwith "Internal error: cannot parse constants in context."
+      | Some constants -> ok constants)
+
+let patch_constants ctxt f =
+  let constants = f (constants ctxt) in
+  add_constants (context ctxt) constants >|= fun context ->
+  let ctxt = update_context ctxt context in
+  update_constants ctxt constants
+
+let check_inited ctxt =
+  Context.find ctxt version_key >|= function
+  | None -> failwith "Internal error: un-initialized context."
+  | Some bytes ->
+      let s = Bytes.to_string bytes in
+      if Compare.String.(s = version_value) then Ok ()
+      else storage_error (Incompatible_protocol_version s)
+
+let prepare ctxt ~level ~timestamp =
+  get_constants ctxt >|=? fun constants ->
+  {
+    context = ctxt;
+    constants;
+    timestamp;
+    level;
+    internal_nonce = 0;
+    internal_nonces_used = Int_set.empty;
+    remaining_operation_gas = Gas_limit_repr.Arith.zero;
+    unlimited_operation_gas = false;
+  }
+
+
+type previous_protocol = Genesis of Parameters_repr.t 
+
+let check_and_update_protocol_version ctxt =
+  (Context.find ctxt version_key >>= function
+   | None ->
+       failwith "Internal error: un-initialized context in check_first_block."
+   | Some bytes ->
+       let s = Bytes.to_string bytes in
+       if Compare.String.(s = version_value) then
+         failwith "Internal error: previously initialized context."
+       else if Compare.String.(s = "genesis") then
+         get_proto_param ctxt >|=? fun (param, ctxt) -> (Genesis param, ctxt)
+       else Lwt.return @@ storage_error (Incompatible_protocol_version s))
+  >>=? fun (previous_proto, ctxt) ->
+  Context.add ctxt version_key (Bytes.of_string version_value) >|= fun ctxt ->
+  ok (previous_proto, ctxt)
+
+let prepare_first_block ctxt ~level ~timestamp =
+  check_and_update_protocol_version ctxt >>=? fun (previous_proto, ctxt) ->
+  (match previous_proto with
+  | Genesis param ->
+      Raw_level_repr.of_int32 level >>?= fun first_level ->
+      set_first_level ctxt first_level >>=? fun ctxt ->
+      add_constants ctxt param.constants >|= ok
+  )
+  >>=? fun ctxt ->
+  prepare ctxt ~level ~timestamp
+  >|=? fun ctxt -> (previous_proto, ctxt)
+
+let activate ctxt h = Updater.activate (context ctxt) h >|= update_context ctxt
 
 (* Generic context ********************************************************)
 
@@ -270,8 +417,6 @@ let project x = x
 
 let absolute_key _ k = k
 
-
-
 (****** GAS STUFF ***********)
 
 let consume_gas ctxt cost =
@@ -283,4 +428,3 @@ let consume_gas ctxt cost =
 
 let check_enough_gas ctxt cost =
   consume_gas ctxt cost >>? fun _ -> Result.return_unit
-
