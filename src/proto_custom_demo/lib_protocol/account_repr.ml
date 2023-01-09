@@ -1,7 +1,5 @@
 type t = Signature.Public_key_hash.t
 
-type account_key = j
-
 type account = t
 
 type error += Invalid_account_notation of string

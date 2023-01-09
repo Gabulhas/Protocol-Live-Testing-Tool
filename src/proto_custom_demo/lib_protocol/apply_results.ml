@@ -8,28 +8,14 @@ The apply_results data structure can be thought of as representing the "results 
  *)
 let trace_encoding = make_trace_encoding error_encoding
 
-
 type block_metadata = {
   level : Level.compat_t;
-  level_info : Level.t;
-  block_hash : string;
+  block_hash : Proof_of_work.H.t;
   block_timestamp : Time.t;
-  block_nonce : int;
-  block_difficulty : int;
+  block_nonce : Int64.t;
+  block_target : Z.t;
   balance_updates : Receipt.balance_updates;
 }
-
-open Data_encoding
-
-let block_metadata_encoding =
-  obj7
-    (req "level" Level.compat_encoding)
-    (req "level_info" Level.encoding)
-    (req "block_hash" string)
-    (req "block_timestamp" Time.encoding)
-    (req "block_nonce" int32)
-    (req "block_difficulty" int32)
-    (req "balance_updates" Receipt.balance_updates_encoding)
 
 type apply_results = {
   block_metadata : block_metadata;
@@ -40,67 +26,160 @@ type apply_results = {
   balance_updates : Receipt.balance_updates;
 }
 
-let apply_results_encoding =
-  obj5
-    (req "block_metadata" block_metadata_encoding)
-    (req "applied_operations" (list Operation.encoding))
-    (req "refused_operations" (list Operation.encoding))
-    (req "branch_refused_operations" (list Operation.encoding))
-    (req "branch_delayed_operations" (list Operation.encoding))
+type successful_manager_operation_result =
+  | Reveal_result
+  | Transaction_result of {balance_updates : Receipt.balance_updates}
+  | Coinbase_result of {balance_updates : Receipt.balance_updates}
 
-type transaction_result =
-  | Applied
-  | Backtracked of error trace option
+type manager_operation_result =
+  | Applied of successful_manager_operation_result
   | Failed of error trace
-  | Skipped
 
 type operation_result =
-  | TransactionResult of {
-      balance_updates : Receipt.balance_updates;
-      operation_result : transaction_result;
+  | Manager_operation_result of {
+      operation_result : manager_operation_result;
+      nonce : int;
     }
-(*TODO: add coinbase*)
 
-open Data_encoding
+let block_metadata_encoding =
+  let open Data_encoding in
+  conv
+    (fun {
+           level;
+           block_hash;
+           block_timestamp;
+           block_nonce;
+           block_target;
+           balance_updates;
+         } ->
+      ( level,
+        block_hash,
+        block_timestamp,
+        block_nonce,
+        block_target,
+        balance_updates ))
+    (fun ( level,
+           block_hash,
+           block_timestamp,
+           block_nonce,
+           block_target,
+           balance_updates ) ->
+      {
+        level;
+        block_hash;
+        block_timestamp;
+        block_nonce;
+        block_target;
+        balance_updates;
+      })
+    (obj6
+       (req "level" Level.compat_encoding)
+       (req "block_hash" Proof_of_work.H.encoding)
+       (req "block_timestamp" Time.encoding)
+       (req "block_nonce" int64)
+       (req "block_target" z)
+       (req "balance_updates" Receipt.balance_updates_encoding))
 
-let transaction_result_encoding =
+let apply_results_encoding =
+  let open Data_encoding in
+  conv
+    (fun {
+           block_metadata;
+           applied_operations;
+           refused_operations;
+           branch_refused_operations;
+           branch_delayed_operations;
+           balance_updates;
+         } ->
+      ( block_metadata,
+        applied_operations,
+        refused_operations,
+        branch_refused_operations,
+        branch_delayed_operations,
+        balance_updates ))
+    (fun ( block_metadata,
+           applied_operations,
+           refused_operations,
+           branch_refused_operations,
+           branch_delayed_operations,
+           balance_updates ) ->
+      {
+        block_metadata;
+        applied_operations;
+        refused_operations;
+        branch_refused_operations;
+        branch_delayed_operations;
+        balance_updates;
+      })
+    (obj6
+       (req "block_metadata" block_metadata_encoding)
+       (req "applied_operations" (list operation_encoding))
+       (req "refused_operations" (list operation_encoding))
+       (req "branch_refused_operations" (list operation_encoding))
+       (req "branch_delayed_operations" (list operation_encoding))
+       (req "balance_updates" Receipt.balance_updates_encoding))
+
+let successful_manager_operation_result_encoding =
+  let open Data_encoding in
   union
-    [ case
+    [
+      case
         (Tag 0)
-        ~title:"Applied"
-        (constant "applied")
-        (function Applied -> Some () | _ -> None)
-        (function () -> Applied);
+        ~title:"Reveal_result"
+        unit
+        (function Reveal_result -> Some () | _ -> None)
+        (fun () -> Reveal_result);
       case
         (Tag 1)
-        ~title:"Backtracked"
-        (obj1 (opt "trace" trace_encoding))
-        (function Backtracked d -> Some d | _ -> None)
-        (function d -> Backtracked d);
+        ~title:"Transaction_result"
+        (obj1 (req "balance_updates" Receipt.balance_updates_encoding))
+        (function
+          | Transaction_result {balance_updates} -> Some balance_updates
+          | _ -> None)
+        (fun balance_updates -> Transaction_result {balance_updates});
       case
         (Tag 2)
-        ~title:"Failed"
-        (obj1 (req "trace" trace_encoding))
-        (function Failed d -> Some d | _ -> None)
-        (function d -> Failed d);
-      case
-        (Tag 3)
-        ~title:"Skipped"
-        (constant "failed")
-        (function Skipped -> Some () | _ -> None)
-        (function () -> Skipped)
+        ~title:"Coinbase_result"
+        (obj1 (req "balance_updates" Receipt.balance_updates_encoding))
+        (function
+          | Coinbase_result {balance_updates} -> Some balance_updates
+          | _ -> None)
+        (fun balance_updates -> Coinbase_result {balance_updates});
     ]
 
-
+let manager_operation_result_encoding =
+  let open Data_encoding in
+  union
+    [
+      case
+        (Tag 0)
+        ~title:"Applied"
+        successful_manager_operation_result_encoding
+        (function Applied t -> Some t | _ -> None)
+        (fun t -> Applied t);
+      case
+        (Tag 1)
+        ~title:"Failed"
+        (obj1 (req "error" trace_encoding))
+        (function Failed t -> Some t | _ -> None)
+        (fun t -> Failed t);
+    ]
 
 let operation_result_encoding =
+  let open Data_encoding in
   union
-    [ case
+    [
+      case
         (Tag 0)
-        ~title:"TransactionResult"
+        ~title:"manager_operation_encoding"
         (obj2
-           (req "balance_updates" Receipt.balance_updates_encoding)
-           (req "operation_result" transaction_result_encoding))
-        (function TransactionResult {balance_updates; operation_result} -> Some (balance_updates, operation_result) )
-        (function (balance_updates, operation_result) -> TransactionResult {balance_updates; operation_result} );
+           (req "operation_result" manager_operation_result_encoding)
+           (req "nonce" uint8))
+        (function
+          | Manager_operation_result {operation_result; nonce}
+            ->
+              Some (operation_result, nonce))
+        (fun (operation_result, nonce) ->
+          Manager_operation_result {operation_result; nonce});
     ]
+

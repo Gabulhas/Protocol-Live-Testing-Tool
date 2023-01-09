@@ -9,6 +9,8 @@ type error +=
       * Signature.Public_key_hash.t
   | Inconsistent_public_key of Signature.Public_key.t * Signature.Public_key.t
   | Failure of string
+  | Previously_revealed_key of Account_repr.t (* `Permanent *)
+  | Unrevealed_manager_key of Account_repr.t
 
 let () =
   register_error_kind
@@ -125,19 +127,35 @@ let () =
 
   register_error_kind
     `Branch
-    ~id:"account.empty_account"
-    ~title:"Empty implicit account"
+    ~id:"account.unrevealed_key"
+    ~title:"Manager operation precedes key revelation"
     ~description:
-      "No manager operations are allowed on an empty implicit account."
-    ~pp:(fun ppf implicit ->
+      "One tried to apply a manager operation without revealing the manager \
+       public key"
+    ~pp:(fun ppf s ->
       Format.fprintf
         ppf
-        "Empty implicit account (%a)"
-        Signature.Public_key_hash.pp
-        implicit)
-    Data_encoding.(obj1 (req "implicit" Signature.Public_key_hash.encoding))
-    (function Empty_account c -> Some c | _ -> None)
-    (fun c -> Empty_account c)
+        "Unrevealed manager key for account %a."
+        Account_repr.pp
+        s)
+    Data_encoding.(obj1 (req "account" Account_repr.encoding))
+    (function Unrevealed_manager_key s -> Some s | _ -> None)
+    (fun s -> Unrevealed_manager_key s) ;
+
+  register_error_kind
+    `Branch
+    ~id:"account.previously_revealed_key"
+    ~title:"Manager operation already revealed"
+    ~description:"One tried to revealed twice a manager public key"
+    ~pp:(fun ppf s ->
+      Format.fprintf
+        ppf
+        "Previously revealed manager key for account %a."
+        Account_repr.pp
+        s)
+    Data_encoding.(obj1 (req "account" Account_repr.encoding))
+    (function Previously_revealed_key s -> Some s | _ -> None)
+    (fun s -> Previously_revealed_key s)
 
 let failwith msg = fail (Failure msg)
 
@@ -155,11 +173,10 @@ let exists _ _ = Lwt.return_true
 
 let list c = Storage.Account.list c
 
-
-let initialize_if_needed ctxt account = 
-    Storage.Account.Balance.find ctxt account >>=? function
-    | None -> create_account ctxt account ~balance:(Tez_repr.zero)
-    | Some _ -> return ctxt
+let initialize_if_needed ctxt account =
+  Storage.Account.Balance.find ctxt account >>=? function
+  | None -> create_account ctxt account ~balance:Tez_repr.zero
+  | Some _ -> return ctxt
 
 let get_balance_exists_account c account =
   Storage.Account.Balance.find c account >>=? function
@@ -204,3 +221,21 @@ let debit_account ctxt account amount =
 let credit_account ctxt account amount =
   initialize_if_needed ctxt account >>=? fun ctxt ->
   increase_balance ctxt account amount
+
+let reveal_manager_key c manager public_key =
+  let account = manager in
+  Storage.Account.Manager.get c account >>=? function
+  | Public_key _ -> fail (Previously_revealed_key account)
+  | Hash v ->
+      let actual_hash = Signature.Public_key.hash public_key in
+      if Signature.Public_key_hash.equal actual_hash v then
+        let v = Manager_repr.Public_key public_key in
+        Storage.Account.Manager.update c account v
+      else fail (Inconsistent_hash (public_key, v, actual_hash))
+
+let get_manager_key c manager =
+  let account = manager in
+  Storage.Account.Manager.find c account >>=? function
+  | None -> failwith "get_manager_key"
+  | Some (Manager_repr.Hash _) -> fail (Unrevealed_manager_key account)
+  | Some (Manager_repr.Public_key v) -> return v
