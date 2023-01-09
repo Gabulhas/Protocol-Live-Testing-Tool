@@ -45,8 +45,6 @@ let check_manager_signature ctxt operation management_operation =
 open Apply_results
 open Receipt
 
-type success_or_failure = Success of context | Failure
-
 let apply_manager_operation_content ctxt operation source =
     match operation with
     | Transaction {amount; destination} ->
@@ -102,12 +100,4 @@ let apply_operation ctxt (operation: Operation.operation):  (t *  operation_resu
     Like: We might want to send a Reveal and a Transaction
      *)
     apply_operation_contents ctxt operation operation.protocol_data.content 
-
-
-
-
-
-
-
-
 
