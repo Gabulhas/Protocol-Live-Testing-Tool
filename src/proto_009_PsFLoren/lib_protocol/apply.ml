@@ -1033,6 +1033,7 @@ let check_manager_signature ctxt chain_id (op : _ Kind.manager contents_list)
     in
     match contents_list with
     | Single op ->
+
         check_same_manager (source op) manager
     | Cons (op, rest) ->
         check_same_manager (source op) manager
