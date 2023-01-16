@@ -10,7 +10,7 @@ let trace_encoding = make_trace_encoding error_encoding
 
 type block_metadata = {
   level : Level.compat_t;
-  block_hash : Proof_of_work.H.t;
+  block_hash : Block_hash.t;
   block_timestamp : Time.t;
   block_nonce : Int64.t;
   block_target : Z.t;
@@ -40,6 +40,7 @@ type operation_result =
       operation_result : manager_operation_result;
       nonce : int;
     }
+  | No_result
 
 let block_metadata_encoding =
   let open Data_encoding in
@@ -74,7 +75,7 @@ let block_metadata_encoding =
       })
     (obj6
        (req "level" Level.compat_encoding)
-       (req "block_hash" Proof_of_work.H.encoding)
+       (req "block_hash" Block_hash.encoding)
        (req "block_timestamp" Time.encoding)
        (req "block_nonce" int64)
        (req "block_target" z)
@@ -176,10 +177,15 @@ let operation_result_encoding =
            (req "operation_result" manager_operation_result_encoding)
            (req "nonce" uint8))
         (function
-          | Manager_operation_result {operation_result; nonce}
-            ->
-              Some (operation_result, nonce))
+          | Manager_operation_result {operation_result; nonce} ->
+              Some (operation_result, nonce)
+          | _ -> None)
         (fun (operation_result, nonce) ->
           Manager_operation_result {operation_result; nonce});
+      case
+        (Tag 1)
+        ~title:"no_result"
+        empty
+        (function No_result -> Some () | _ -> None)
+        (fun () -> No_result);
     ]
-

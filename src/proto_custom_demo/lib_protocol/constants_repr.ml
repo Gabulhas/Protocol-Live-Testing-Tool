@@ -1,4 +1,5 @@
 (*TODO: Change these values*)
+(*TODO: remove non-Nakamoto consensus stuff*)
 let version_number = "\001"
 
 let nonce_length = 32
@@ -8,6 +9,8 @@ let max_anon_ops_per_block = 132
 let max_proposals_per_delegate = 20
 
 let max_operation_data_length = 32 * 1024 (* 32kB *)
+
+
 
 type fixed = {
   nonce_length : int;
@@ -51,7 +54,6 @@ let fixed =
   }
 
 
-
 type parametric =
     {
         block_time: Time_repr.t;
@@ -59,7 +61,7 @@ type parametric =
         difficulty_adjust_epoch_size: Int32.t;
 
         halving_epoch_size: Int32.t;
-        reward_multiplier: Int64.t;
+        reward_multiplier: Tez_repr.t;
 
         (*TODO:
             This is the reward formula from Bitcoin:
@@ -84,7 +86,7 @@ let parametric_encoding =
        (req "initial_target" Target_repr.encoding)
        (req "difficulty_adjust_epoch_size" int32)
        (req "halving_epoch_size" int32)
-       (req "reward_multiplier" int64))
+       (req "reward_multiplier" Tez_repr.encoding))
 
 type t = {fixed : fixed; parametric : parametric}
 

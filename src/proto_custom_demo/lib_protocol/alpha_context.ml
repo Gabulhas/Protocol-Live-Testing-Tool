@@ -108,3 +108,20 @@ let finalize ?commit_message:message c =
     last_allowed_fork_level = 0l
   }
 *)
+
+
+
+let constants = Raw_context.constants
+
+(* TODO: add the remaining ones
+
+let _timestamp = Raw_context.timestamp
+
+let _internal_nonce = Raw_context.internal_nonce
+
+let _internal_nonces_used = Raw_context.internal_nonces_used
+
+let remaining_operation_gas = Raw_context.remaining_operation_gas
+
+let unlimited_operation_gas = Raw_context.unlimited_operation_gas
+*)

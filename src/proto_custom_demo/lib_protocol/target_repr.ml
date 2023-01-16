@@ -16,3 +16,9 @@ let to_hex d=
 let to_bytes d =
     d |> to_hex |> Hex.to_bytes
 
+
+let adjust (target: t) (time_difference_ratio:int64) =
+    (*
+    time_difference_ratio = time_taken this epoch/ block_time * epoch_size
+     *)
+    Z.mul target (Z.of_int64 time_difference_ratio)

@@ -43,11 +43,11 @@ let[@inline] context ctxt = ctxt.context
 
 let[@inline] constants ctxt = ctxt.constants
 
-let[@inline] timestamp ctxt = ctxt.timestamp
+let[@inline] _timestamp ctxt = ctxt.timestamp
 
-let[@inline] internal_nonce ctxt = ctxt.internal_nonce
+let[@inline] _internal_nonce ctxt = ctxt.internal_nonce
 
-let[@inline] internal_nonces_used ctxt = ctxt.internal_nonces_used
+let[@inline] _internal_nonces_used ctxt = ctxt.internal_nonces_used
 
 let[@inline] update_context ctxt context = {ctxt with context}
 
@@ -89,7 +89,7 @@ let constants_key = [version; "constants"]
 
 let protocol_param_key = ["protocol_parameters"]
 
-let get_first_level ctxt =
+let _get_first_level ctxt =
   Context.find ctxt first_level_key
   >|= function
   | None ->
@@ -181,13 +181,13 @@ let get_constants ctxt =
       | None -> failwith "Internal error: cannot parse constants in context."
       | Some constants -> ok constants)
 
-let patch_constants ctxt f =
+let _patch_constants ctxt f =
   let constants = f (constants ctxt) in
   add_constants (context ctxt) constants >|= fun context ->
   let ctxt = update_context ctxt context in
   update_constants ctxt constants
 
-let check_inited ctxt =
+let _check_inited ctxt =
   Context.find ctxt version_key >|= function
   | None -> failwith "Internal error: un-initialized context."
   | Some bytes ->

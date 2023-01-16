@@ -4,7 +4,7 @@ TO Remember: You don't want the stamp or whatever since the nonce and the whole 
  
 *)
 type contents = {
-  time : Time_repr.t;
+  time : Time_repr.t; (*TODO: Remove: time is already in the header*)
   target : Z.t; (*Should be a 256 bit integer*)
   nonce : Int64.t; (*Merkle tree*)
 }

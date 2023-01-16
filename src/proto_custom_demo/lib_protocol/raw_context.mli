@@ -21,6 +21,17 @@ type t
 
 type root = t
 
+val constants : t -> Constants_repr.parametric
+
+
+
+
+
+
+
+
+
+
 
 (** Retrieves the state of the database and gives its abstract view.
     It also returns wether this is the first block validated

@@ -41,9 +41,11 @@ let relative_position_within_block _a _b = 0
 type validation_mode =
   | Application of {
       block_header : Alpha_context.Block_header.t;
+      current_reward : Tez_repr.t;
     }
   | Partial_application of {
       block_header : Alpha_context.Block_header.t;
+      current_reward : Tez_repr.t;
     }
   | Partial_construction of {predecessor : Block_hash.t}
   | Full_construction of {
@@ -52,17 +54,16 @@ type validation_mode =
     }
 
 type validation_state = {
-  chain_id : Chain_id.t;
   ctxt : Alpha_context.t;
   op_count : int;
   mode: validation_mode;
+  coinbase_count: int;
 }
 
 
 
 (*
 THIS IS USED TO INIT THE CHAIN, LIKE THE GENESIS BLOCK AND STUFF
-
 
  *)
 let init ctxt block_header =
@@ -72,41 +73,87 @@ let init ctxt block_header =
   >|=? fun ctxt -> Alpha_context.finalize ctxt
 
 
-let begin_application chain_id (predecessor_context: Context.t) predecessor_timestamp predecessor_fitness (block_header: block_header) =
+(*
+Enforced signatures:
+
+begin_application: Context.t -> block_header -> validation_state
+    is used when validating a block received from the network.
+
+begin_partial_application: Context.t -> block_header -> validation_state
+    is used when the shell receives a block more than one level ahead of the current head (this happens, for instance, when synchronizing a node). This function should run quickly, as its main role is to reject invalid blocks from the chain as early as possible. 
+
+begin_construction: Context.t -> ?protocol_data: block_header_data -> validation_state
+     is used by the shell when instructed to build a block and for validating operations as they are gossiped on the network. This two cases are distinguished by the optional protocol_data argument: when only validating operations the argument is missing, as there is no block header. In both of these cases, the operations are not (yet) part of a block which is why the function does not expect a shell block header.
+    
+apply_operation: validation_state -> operation -> validation_state
+     is called after begin_application or begin_construction, and before finalize_block, for each operation in the block or in the mempool, respectively. Its role is to validate the operation and to update the (intermediary) state accordingly.
+    
+finalize_block: validation_state -> validation_result
+    represents the last step in a block validation sequence. It produces the context that will be used as input for the validation of the block’s successor candidates.
+    
+
+ *)
+
+
+let begin_application (predecessor_context: Context.t) predecessor_timestamp (block_header: block_header) =
     let level = block_header.shell.level in
-    (*
-    TODO: check if epoch is %2016, so the the target input in the function should reflect the new target
-
-     *)
-    predecessor_context
-
-    Proof_of_work.check_block block_header  >>= fun is_valid ->
-    if !is_valid then
-        Proof_of_work.invalid_block_hash ()
-    else
-        let mode = Application {block_header} in
-    {mode; chain_id; ctxt; op_count = 0}
-     
-    
-    
+    let ctxt = predecessor_context in
+    let timestamp =block_header.shell.timestamp  in 
+    Alpha_context.prepare ctxt ~level ~timestamp:predecessor_timestamp >>=? fun ctxt ->
+    Apply.begin_application ctxt block_header timestamp >|=? fun (ctxt, current_reward) ->
+    let mode =
+        Application {block_header; current_reward} in
+    {ctxt; op_count=0; mode; coinbase_count=0}
+    (*OP count should be 0 because we are just verifying the header*)
 
 
-        
-        
-        
+let begin_partial_application (predecessor_context: Context.t) predecessor_timestamp (block_header: block_header) =
+    let level = block_header.shell.level in
+    let ctxt = predecessor_context in
+    let timestamp =block_header.shell.timestamp  in 
+    Alpha_context.prepare ctxt ~level ~timestamp:predecessor_timestamp >>=? fun ctxt ->
+    Apply.begin_application ctxt block_header timestamp predecessor_timestamp >|=? fun (ctxt, current_reward) ->
+    let mode =
+        Partial_application {block_header; current_reward} in
+    {ctxt; op_count=0; mode; coinbase_count=0}
+
+let begin_construction predecessor_context predecessor_timestamp predecessor_level predecessor_fitness predecessor timestamp ?protocol_data unit =
+  let level = Int32.succ pred_level in
+  let fitness = pred_fitness in
+  Alpha_context.prepare ~level ~predecessor_timestamp ~timestamp ~fitness ctxt
+  >>=? fun (ctxt, migration_balance_updates) ->
+  ( match protocol_data with
+  | None ->
+      Apply.begin_partial_construction ctxt
+      >|=? fun ctxt ->
+      let mode = Partial_construction {predecessor} in
+      (mode, ctxt)
+  | Some proto_header ->
+      Apply.begin_full_construction
+        ctxt
+        predecessor_timestamp
+        proto_header.contents
+      >|=? fun (ctxt, protocol_data, baker, block_delay) ->
+      let mode =
+        let baker = Signature.Public_key.hash baker in
+        Full_construction {predecessor; baker; protocol_data; block_delay}
+      in
+      (mode, ctxt) )
+  >|=? fun (mode, ctxt) ->
+  {mode; chain_id; ctxt; op_count = 0; migration_balance_updates}
 
 
-    
 
-
-let begin_partial_application chain_id ancestor_context predecessor_timestamp predecessor_fitness block_header =
-    ()
-
-let begin_construction chain_id predecessor_context predecessor_timestamp predecessor_level predecessor_fitness predecessor timestamp ?protocol_data unit =
-    ()
-
-let apply_operation ({mode; chain_id; ctxt; op_count; _} as data) operation  =
-    let {shell; protocol_data = Operation_data protocol_data} = operation in
+(*TODO: check if there are more than 1 coinbase transactions and if the reward differs*)
+let apply_operation ({ctxt; op_count; mode} as data) operation  =
+  let open Apply_results in
+  match mode with
+  | Partial_application _ ->
+      (* Multipass validation only considers operations in pass 0. *)
+      let op_count = op_count + 1 in
+      return ({data with ctxt; op_count}, No_result)
+  | _ ->
+      let {shell; protocol_data = Operation_data protocol_data} = operation in
       let operation : _ Alpha_context.operation = {shell; protocol_data} in
       let (predecessor, baker) =
         match mode with
@@ -120,7 +167,6 @@ let apply_operation ({mode; chain_id; ctxt; op_count; _} as data) operation  =
       in
       Apply.apply_operation
         ctxt
-        chain_id
         Optimized
         predecessor
         baker
@@ -128,10 +174,11 @@ let apply_operation ({mode; chain_id; ctxt; op_count; _} as data) operation  =
         operation
       >|=? fun (ctxt, result) ->
       let op_count = op_count + 1 in
+
       ({data with ctxt; op_count}, Operation_metadata result)
 
-
 let finalize_block validation_state block_header = ()
+    (*SHould take in account the update_epoch_time*)
 
 
 let rpc_services = ()
