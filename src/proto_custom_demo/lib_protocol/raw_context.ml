@@ -43,7 +43,9 @@ let[@inline] context ctxt = ctxt.context
 
 let[@inline] constants ctxt = ctxt.constants
 
-let[@inline] _timestamp ctxt = ctxt.timestamp
+let[@inline] level ctxt = ctxt.level
+
+let[@inline] timestamp ctxt = ctxt.timestamp
 
 let[@inline] _internal_nonce ctxt = ctxt.internal_nonce
 

@@ -112,6 +112,8 @@ let finalize ?commit_message:message c =
 
 
 let constants = Raw_context.constants
+let level = Raw_context.level
+let timestamp = Raw_context.timestamp
 
 (* TODO: add the remaining ones
 
@@ -125,3 +127,16 @@ let remaining_operation_gas = Raw_context.remaining_operation_gas
 
 let unlimited_operation_gas = Raw_context.unlimited_operation_gas
 *)
+
+let finalize ?commit_message:message (c:context): Updater.validation_result =
+    let fitness = Raw_context.level c in
+    let context = Raw_context.context c in
+    {
+        Updater.context;
+        fitness=[(Data_encoding.Binary.to_bytes_exn Data_encoding.int32 fitness)];
+        message;
+        max_operations_ttl=60;
+        (*TODO fix this*)
+        last_allowed_fork_level=0l;
+  }
+

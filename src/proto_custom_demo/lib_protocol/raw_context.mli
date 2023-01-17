@@ -23,11 +23,9 @@ type root = t
 
 val constants : t -> Constants_repr.parametric
 
-
-
-
-
-
+val level : t -> int32
+val context : t -> Context.t
+val timestamp : t -> Time.t
 
 
 

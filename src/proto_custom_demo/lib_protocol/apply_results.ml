@@ -9,12 +9,8 @@ The apply_results data structure can be thought of as representing the "results 
 let trace_encoding = make_trace_encoding error_encoding
 
 type block_metadata = {
-  level : Level.compat_t;
-  block_hash : Block_hash.t;
+  level : Int32.t;
   block_timestamp : Time.t;
-  block_nonce : Int64.t;
-  block_target : Z.t;
-  balance_updates : Receipt.balance_updates;
 }
 
 type apply_results = {
@@ -47,39 +43,22 @@ let block_metadata_encoding =
   conv
     (fun {
            level;
-           block_hash;
            block_timestamp;
-           block_nonce;
-           block_target;
-           balance_updates;
          } ->
       ( level,
-        block_hash,
-        block_timestamp,
-        block_nonce,
-        block_target,
-        balance_updates ))
+        block_timestamp
+        ))
     (fun ( level,
-           block_hash,
-           block_timestamp,
-           block_nonce,
-           block_target,
-           balance_updates ) ->
+           block_timestamp
+           ) ->
       {
         level;
-        block_hash;
         block_timestamp;
-        block_nonce;
-        block_target;
-        balance_updates;
       })
-    (obj6
-       (req "level" Level.compat_encoding)
-       (req "block_hash" Block_hash.encoding)
+    (obj2
+       (req "level" int32)
        (req "block_timestamp" Time.encoding)
-       (req "block_nonce" int64)
-       (req "block_target" z)
-       (req "balance_updates" Receipt.balance_updates_encoding))
+       )
 
 let apply_results_encoding =
   let open Data_encoding in

@@ -109,7 +109,6 @@ Utils
 account_storage.ml
 alpha_context.ml
 apply.ml
-apply.mli
 apply_results.ml
 block_header_repr.ml
 constants_repr.ml
@@ -167,7 +166,6 @@ utils.ml
 account_storage.ml
 alpha_context.ml
 apply.ml
-apply.mli
 apply_results.ml
 block_header_repr.ml
 constants_repr.ml
@@ -231,7 +229,6 @@ utils.ml
 account_storage.ml
 alpha_context.ml
 apply.ml
-apply.mli
 apply_results.ml
 block_header_repr.ml
 constants_repr.ml
