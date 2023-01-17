@@ -204,8 +204,6 @@ let finalize_block {mode; ctxt; op_count; coinbase_count} : (Updater.validation_
 
 
 
-let rpc_services = ()
-
 
 let init ctxt block_header =
   let level = block_header.Block_header.level in
@@ -214,8 +212,4 @@ let init ctxt block_header =
   >|=? fun ctxt -> Alpha_context.finalize ctxt
 
 
-
-
-
-(*TODO: Search for "EPOCH"*)
-
+let rpc_services = ()
