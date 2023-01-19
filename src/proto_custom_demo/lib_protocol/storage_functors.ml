@@ -54,15 +54,15 @@ module Make_encoder (V : VALUE) : ENCODER with type t := V.t = struct
     | None -> Bytes.empty
 end
 
-let len_name = "len"
+let _len_name = "len"
 
-let data_name = "data"
+let _data_name = "data"
 
-let encode_len_value bytes =
+let _encode_len_value bytes =
   let length = Bytes.length bytes in
   Data_encoding.(Binary.to_bytes_exn int31) length
 
-let decode_len_value key len =
+let _decode_len_value key len =
   match Data_encoding.(Binary.of_bytes_opt int31) len with
   | None -> error (Raw_context.Storage_error (Corrupted_data key))
   | Some len -> ok len

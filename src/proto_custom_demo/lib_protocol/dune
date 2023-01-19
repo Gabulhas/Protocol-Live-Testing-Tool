@@ -120,7 +120,6 @@ header_storage.ml
 init_storage.ml
 level_repr.ml
 main.ml
-main.mli
 manager_repr.ml
 misc.ml
 nBits_repr.ml
@@ -177,7 +176,6 @@ header_storage.ml
 init_storage.ml
 level_repr.ml
 main.ml
-main.mli
 manager_repr.ml
 misc.ml
 nBits_repr.ml
@@ -240,7 +238,6 @@ header_storage.ml
 init_storage.ml
 level_repr.ml
 main.ml
-main.mli
 manager_repr.ml
 misc.ml
 nBits_repr.ml

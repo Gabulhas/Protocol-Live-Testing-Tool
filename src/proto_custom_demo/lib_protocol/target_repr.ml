@@ -22,3 +22,9 @@ let adjust (target: t) (time_difference_ratio:int64) =
     time_difference_ratio = time_taken this epoch/ block_time * epoch_size
      *)
     Z.mul target (Z.of_int64 time_difference_ratio)
+
+let to_hex_string d = 
+    let as_hex = to_hex d  in
+    match as_hex with 
+    | `Hex a -> a
+
