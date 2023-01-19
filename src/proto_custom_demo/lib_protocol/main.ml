@@ -181,6 +181,7 @@ let finalize_block {mode; ctxt; op_count; coinbase_count} _header : (Updater.val
 
   | Application _
   | Full_construction _ ->
+      (*Check the target and stuff*)
       let level = Alpha_context.level ctxt in
       let block_timestamp = Alpha_context.timestamp ctxt in
       let commit_message =
