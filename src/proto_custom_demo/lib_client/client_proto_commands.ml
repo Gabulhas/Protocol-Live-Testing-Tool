@@ -26,5 +26,9 @@
 open Protocol
 module Demo_block_services = Block_services.Make (Protocol) (Protocol)
 
+let get_balance (cctxt : Protocol_client_context.full) account =
+  Services.AccountServices.Commands.get_balance cctxt (cctxt#chain, cctxt#block) account >>=? fun cnt ->
+  cctxt#message "The counter value is %s" (Tez_repr.to_string cnt) >>= fun () ->
+  return_unit
 
-let  (cctxt : Protocol_client_context.full) account =
+(*TODO add more Commands*)

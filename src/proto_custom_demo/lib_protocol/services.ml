@@ -36,12 +36,21 @@ module AccountServices = struct
     register1
         ~chunked:false
         exists
-        (fun ctxt key () ()-> Account_storage.is_revealed ctxt key >>=? fun result -> return result );
+        (fun ctxt key () ()-> Account_storage.exists ctxt key >>=? fun result -> return result );
 
     register1
         ~chunked:false
-        exists
+        revealed
         (fun ctxt key () ()-> Account_storage.is_revealed ctxt key >>=? fun result -> return result )
+
+    module Commands = struct
+        let get_balance rpc_ctxt chain_blk account =
+            RPC_context.make_call1 get_balance rpc_ctxt chain_blk account () () 
+        let revealed rpc_ctxt chain_blk account =
+            RPC_context.make_call1 revealed rpc_ctxt chain_blk account () ()
+        let exists rpc_ctxt chain_blk account =
+            RPC_context.make_call1 exists rpc_ctxt chain_blk account () ()
+    end
 
 end
 

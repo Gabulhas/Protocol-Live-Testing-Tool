@@ -23,7 +23,6 @@
 (*                                                                           *)
 (*****************************************************************************)
 
-open Protocol
 module Commands = Client_proto_commands
 
 let commands : Protocol_client_context.full Tezos_clic.command list =
@@ -35,12 +34,12 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
   [
     command
       ~group
-      ~desc:"Bake a block"
+      ~desc:"Gets Account Balance"
       no_options
-      (prefixes ["bake"]
-      @@ msg_param ~name:"message" ~desc:"message in block header"
+      (prefixes ["balance"]
+      @@ account_param ~name:"account" ~desc:"Account b58check"
       @@ stop)
-      (fun () msg cctxt -> Commands.bake cctxt msg);
+      (fun () msg cctxt -> Commands.get_balance cctxt msg);
   ]
 
 let () =
