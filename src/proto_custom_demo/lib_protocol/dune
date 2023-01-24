@@ -59,6 +59,7 @@ Raw_level_repr
 Receipt_repr
 Saturation_repr
 Services
+Services_registration
 Storage_costs
 Storage_description
 Storage_functors
@@ -134,7 +135,7 @@ raw_level_repr.ml
 receipt_repr.ml
 saturation_repr.ml
 services.ml
-services.mli
+services_registration.ml
 storage_costs.ml
 storage_description.ml
 storage_functors.ml
@@ -190,7 +191,7 @@ raw_level_repr.ml
 receipt_repr.ml
 saturation_repr.ml
 services.ml
-services.mli
+services_registration.ml
 storage_costs.ml
 storage_description.ml
 storage_functors.ml
@@ -252,7 +253,7 @@ raw_level_repr.ml
 receipt_repr.ml
 saturation_repr.ml
 services.ml
-services.mli
+services_registration.ml
 storage_costs.ml
 storage_description.ml
 storage_functors.ml

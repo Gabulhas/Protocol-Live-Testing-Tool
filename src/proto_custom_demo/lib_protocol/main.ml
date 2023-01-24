@@ -6,7 +6,6 @@ type block_header = Alpha_context.Block_header.t = {
 }
 
 
-
 let block_header_data_encoding = Alpha_context.Block_header.protocol_data_encoding
 
 let max_operation_data_length = 32 * 1024 (*Move this to constants*)
@@ -209,7 +208,9 @@ let init _chain_id ctxt block_header =
   >|=? fun ctxt -> Alpha_context.finalize ctxt
 
 
-let rpc_services = RPC_directory.empty
+let rpc_services =
+  Services.register ();
+  Services_registration.get_rpc_services ()
 
 let compare_operations _ _ = 0
 

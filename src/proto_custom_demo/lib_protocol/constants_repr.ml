@@ -90,6 +90,8 @@ let parametric_encoding =
 
 type t = {fixed : fixed; parametric : parametric}
 
+let all_of_parametric parametric = {fixed; parametric}
+
 let encoding =
   let open Data_encoding in
   conv

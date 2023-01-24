@@ -30,6 +30,7 @@
 "Receipt_repr",
 "Saturation_repr",
 "Services",
+"Services_registration",
 "Storage_costs",
 "Storage_description",
 "Storage_functors",

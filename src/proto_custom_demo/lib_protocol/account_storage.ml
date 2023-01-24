@@ -168,8 +168,10 @@ let create_account c manager ~balance =
   Storage.Account.Balance.init c account balance >>=? fun c ->
   Storage.Account.Manager.init c account (Manager_repr.Hash manager)
 
-(*REMOVE: only makes sense in a context that smart contacts exist*)
-let exists _ _ = Lwt.return_true
+let exists c manager =
+  Storage.Account.Balance.find c manager >>=? function
+  | None -> return_false
+  | Some _ -> return_true
 
 let list c = Storage.Account.list c
 
@@ -239,3 +241,9 @@ let get_manager_key c manager =
   | None -> failwith "get_manager_key"
   | Some (Manager_repr.Hash _) -> fail (Unrevealed_manager_key account)
   | Some (Manager_repr.Public_key v) -> return v
+
+let is_revealed c manager =
+  Storage.Account.Manager.find c manager >>=? function
+  | None -> return_false
+  | Some (Manager_repr.Hash _) -> return_false
+  | Some _ -> return_true

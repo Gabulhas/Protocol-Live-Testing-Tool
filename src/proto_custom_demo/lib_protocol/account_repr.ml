@@ -46,11 +46,11 @@ let of_b58data = contract_of_b58data
 let rpc_arg =
   let construct = to_b58check in
   let destruct hash =
-    Result.map_error (fun _ -> "Cannot parse contract id") (of_b58check hash)
+    Result.map_error (fun _ -> "Cannot parse account id") (of_b58check hash)
   in
   RPC_arg.make
-    ~descr:"A contract identifier encoded in b58check."
-    ~name:"contract_id"
+    ~descr:"A account identifier encoded in b58check."
+    ~name:"account_id"
     ~construct
     ~destruct
     ()

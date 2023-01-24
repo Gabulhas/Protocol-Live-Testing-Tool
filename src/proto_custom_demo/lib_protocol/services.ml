@@ -1,65 +1,69 @@
-(*****************************************************************************)
-(*                                                                           *)
-(* Open Source License                                                       *)
-(* Copyright (c) 2018 Dynamic Ledger Solutions, Inc. <contact@tezos.com>     *)
-(*                                                                           *)
-(* Permission is hereby granted, free of charge, to any person obtaining a   *)
-(* copy of this software and associated documentation files (the "Software"),*)
-(* to deal in the Software without restriction, including without limitation *)
-(* the rights to use, copy, modify, merge, publish, distribute, sublicense,  *)
-(* and/or sell copies of the Software, and to permit persons to whom the     *)
-(* Software is furnished to do so, subject to the following conditions:      *)
-(*                                                                           *)
-(* The above copyright notice and this permission notice shall be included   *)
-(* in all copies or substantial portions of the Software.                    *)
-(*                                                                           *)
-(* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR*)
-(* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  *)
-(* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL   *)
-(* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER*)
-(* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING   *)
-(* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER       *)
-(* DEALINGS IN THE SOFTWARE.                                                 *)
-(*                                                                           *)
-(*****************************************************************************)
+open Alpha_context
 
-(*
-module S = struct
-  let path = RPC_path.open_root
+module AccountServices = struct
+  let custom_root =
+  (RPC_path.(open_root / "context" / "account")
+    : RPC_context.t RPC_path.context)
 
-  let service_counter_a =
+  let get_balance =
     RPC_service.get_service
-      ~description:"Value of counter A"
+      ~description:"Get Account Balance"
       ~query:RPC_query.empty
-      ~output:Data_encoding.int32
-      RPC_path.(path / "counter" / "a")
+      ~output:Tez_repr.encoding
+      RPC_path.(custom_root /: Account_repr.rpc_arg / "balance")
 
-  let service_counter_b =
+  let exists =
     RPC_service.get_service
-      ~description:"Value of counter B"
+      ~description:"Check if account exists"
       ~query:RPC_query.empty
-      ~output:Data_encoding.int32
-      RPC_path.(path / "counter" / "b")
+      ~output:Data_encoding.bool
+      RPC_path.(custom_root /: Account_repr.rpc_arg / "exists")
+
+  let revealed =
+    RPC_service.get_service
+      ~description:"Check if account is revealed"
+      ~query:RPC_query.empty
+      ~output:Data_encoding.bool
+      RPC_path.(custom_root /: Account_repr.rpc_arg / "revealed")
+
+  let register () = 
+    let open Services_registration in
+    register1
+        ~chunked:false
+        get_balance
+        (fun ctxt key () ()-> Account_storage.get_balance_exists_account ctxt key >>=? fun balance -> return balance);
+
+    register1
+        ~chunked:false
+        exists
+        (fun ctxt key () ()-> Account_storage.is_revealed ctxt key >>=? fun result -> return result );
+
+    register1
+        ~chunked:false
+        exists
+        (fun ctxt key () ()-> Account_storage.is_revealed ctxt key >>=? fun result -> return result )
+
 end
 
-let rpc_services : Updater.rpc_context RPC_directory.t =
-  let dir = RPC_directory.empty in
-  let dir =
-    RPC_directory.register ~chunked:false dir S.service_counter_a (fun ctxt () () ->
-        let context = ctxt.Updater.context in
-        State.get_state context >>= fun state -> return state.State.a)
-  in
-  let dir =
-    RPC_directory.register ~chunked:false dir S.service_counter_b (fun ctxt () () ->
-        let context = ctxt.Updater.context in
-        State.get_state context >>= fun state -> return state.State.b)
-  in
-  dir
+module ConstantServices = struct
+  let custom_root =
+  (RPC_path.(open_root / "context" / "constants")
+    : RPC_context.t RPC_path.context)
 
-let get_counter rpc_ctxt chain_blk counter_name =
-  match counter_name with
-  | `A ->
-      RPC_context.make_call0 S.service_counter_a rpc_ctxt chain_blk () ()
-  | `B ->
-      RPC_context.make_call0 S.service_counter_b rpc_ctxt chain_blk () ()
-*)
+  let all =
+    RPC_service.get_service
+      ~description:"Check if account is revealed"
+      ~query:RPC_query.empty
+      ~output:Constants.encoding
+      custom_root
+
+  let register () = 
+    let open Services_registration in
+      register0 ~chunked:false all (fun ctxt () () -> return @@ Constants.all ctxt)
+
+end
+
+
+let register () =
+    AccountServices.register ();
+    ConstantServices.register ()

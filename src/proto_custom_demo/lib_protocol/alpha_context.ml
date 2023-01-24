@@ -112,6 +112,8 @@ let finalize ?commit_message:message c =
 
 
 
+
+
 let constants = Raw_context.constants
 let level = Raw_context.level
 let timestamp = Raw_context.timestamp
@@ -128,6 +130,13 @@ let remaining_operation_gas = Raw_context.remaining_operation_gas
 
 let unlimited_operation_gas = Raw_context.unlimited_operation_gas
 *)
+
+module Constants = struct
+  include Constants_repr
+
+  let all ctxt = all_of_parametric (constants ctxt)
+end
+
 
 let finalize ?commit_message:message (c:context): Updater.validation_result =
     let fitness = Raw_context.level c in

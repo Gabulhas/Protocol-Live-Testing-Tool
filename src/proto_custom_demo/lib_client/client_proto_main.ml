@@ -30,7 +30,7 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
   let open Tezos_clic in
   let open Client_proto_args in
   let group =
-    {name = "Custom_demo"; title = "Commands for protocol Custom_demo"}
+    {name = "Custom_demo"; title = "Commands for protocol custom_demo"}
   in
   [
     command
@@ -41,41 +41,6 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
       @@ msg_param ~name:"message" ~desc:"message in block header"
       @@ stop)
       (fun () msg cctxt -> Commands.bake cctxt msg);
-    command
-      ~group
-      ~desc:"Increment A"
-      no_options
-      (fixed ["increment"; "a"])
-      (fun () cctxt -> Commands.inject_op cctxt Proto_operation.IncrA);
-    command
-      ~group
-      ~desc:"Increment B"
-      no_options
-      (fixed ["increment"; "b"])
-      (fun () cctxt -> Commands.inject_op cctxt Proto_operation.IncrB);
-    command
-      ~group
-      ~desc:"Transfer from A to B"
-      no_options
-      (prefixes ["transfer"]
-      @@ amount_param
-           ~name:"amount"
-           ~desc:"amount taken from A and given to B (possibly negative)"
-      @@ stop)
-      (fun () amount cctxt ->
-        Commands.inject_op cctxt (Proto_operation.Transfer amount));
-    command
-      ~group
-      ~desc:"Get A counter"
-      no_options
-      (fixed ["get"; "a"])
-      (fun () cctxt -> Commands.get_counter cctxt `A);
-    command
-      ~group
-      ~desc:"Get B counter"
-      no_options
-      (fixed ["get"; "b"])
-      (fun () cctxt -> Commands.get_counter cctxt `B);
   ]
 
 let () =
