@@ -9,6 +9,8 @@
 (package (name octez-baker-PtKathma))
 (package (name octez-baker-PtLimaPt))
 (package (name octez-baker-alpha))
+(package (name octez-baker-custom-demo))
+(package (name tezos-baker-lib-custom-demo))
 (package (name octez-client))
 (package (name octez-codec))
 (package (name octez-dal-node))

@@ -1,0 +1,43 @@
+(library
+ (name tezos_baker_lib_custom_demo)
+ (public_name tezos-baker-lib-custom-demo)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-base
+  tezos-shell-services
+  tezos-client-base
+  tezos-client-custom-demo
+  tezos-protocol-custom-demo
+  tezos-stdlib-unix
+  tezos-client-base-unix
+  tezos-stdlib
+  tezos-shell-context
+  tezos-context
+  tezos-context.memory
+  tezos-rpc-http-client-unix
+  tezos-context-ops
+  tezos-rpc
+  tezos-rpc-http
+  lwt-canceler
+  lwt-exit
+  uri
+  )
+ (library_flags (:standard -linkall))
+ (flags
+  (:standard)
+  -open Tezos_base.TzPervasives
+  -open Tezos_base.TzPervasives.Error_monad.Legacy_monad_globals
+  -open Tezos_shell_services
+  -open Tezos_client_base
+  -open Tezos_client_custom_demo
+  -open Tezos_protocol_custom_demo
+  -open Tezos_stdlib_unix
+  -open Tezos_client_base_unix 
+  -open Tezos_stdlib
+  -open Tezos_stdlib_unix
+  -open Tezos_shell_context
+  -open Tezos_context
+  -open Tezos_context_ops
+  -open Tezos_rpc
+  -open Tezos_rpc_http
+  ))

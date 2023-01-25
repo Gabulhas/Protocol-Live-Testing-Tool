@@ -9,6 +9,7 @@ octez-sc-rollup-node-alpha
 octez-sc-rollup-client-alpha
 octez-accuser-alpha
 octez-baker-alpha
+octez-baker-custom-demo
 octez-tx-rollup-node-PtLimaPt
 octez-tx-rollup-client-PtLimaPt
 octez-accuser-PtLimaPt
