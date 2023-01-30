@@ -198,6 +198,7 @@ let decrease_balance ctxt account amount =
 
 let increment_counter c manager =
   let account = manager in
+  initialize_if_needed c manager >>=? fun c -> 
   Storage.Account.Global_counter.get c >>=? fun global_counter ->
   Storage.Account.Global_counter.update c (Z.succ global_counter) >>=? fun c ->
   Storage.Account.Counter.get c account >>=? fun account_counter ->
@@ -205,12 +206,22 @@ let increment_counter c manager =
 
 let check_counter_increment c manager counter =
   let account = manager in
+  initialize_if_needed c manager >>=? fun c -> 
   Storage.Account.Counter.get c account >>=? fun account_counter ->
   let expected = Z.succ account_counter in
   if Compare.Z.(expected = counter) then return_unit
   else if Compare.Z.(expected > counter) then
     fail (Counter_in_the_past (account, expected, counter))
   else fail (Counter_in_the_future (account, expected, counter))
+
+let get_counter c account =
+  initialize_if_needed c account >>=? fun c -> 
+  Storage.Account.Counter.get c account
+
+let get_new_counter c account =
+  initialize_if_needed c account >>=? fun c -> 
+  Storage.Account.Counter.get c account >>=? fun counter ->
+  return (Z.succ counter)
 
 let debit_account ctxt account amount =
   initialize_if_needed ctxt account >>=? fun ctxt ->
@@ -226,6 +237,7 @@ let credit_account ctxt account amount =
 
 let reveal_manager_key c manager public_key =
   let account = manager in
+  initialize_if_needed c manager >>=? fun c -> 
   Storage.Account.Manager.get c account >>=? function
   | Public_key _ -> fail (Previously_revealed_key account)
   | Hash v ->
@@ -237,12 +249,14 @@ let reveal_manager_key c manager public_key =
 
 let get_manager_key c manager =
   let account = manager in
+  initialize_if_needed c manager >>=? fun c -> 
   Storage.Account.Manager.find c account >>=? function
   | None -> failwith "get_manager_key"
-  | Some (Manager_repr.Hash _) -> fail (Unrevealed_manager_key account)
   | Some (Manager_repr.Public_key v) -> return v
+  | Some (Manager_repr.Hash _) -> fail (Unrevealed_manager_key account)
 
 let is_revealed c manager =
+  initialize_if_needed c manager >>=? fun c -> 
   Storage.Account.Manager.find c manager >>=? function
   | None -> return_false
   | Some (Manager_repr.Hash _) -> return_false

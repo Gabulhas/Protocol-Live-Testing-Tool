@@ -31,12 +31,6 @@ type t = {
   constants : Constants_repr.parametric;
   timestamp : Time.t;
   level : Int32.t;
-
-  internal_nonce : int;
-  internal_nonces_used : Int_set.t;
-      (*TODO: add PoW specific stuff or remove completely*)
-  remaining_operation_gas : Gas_limit_repr.Arith.fp;
-  unlimited_operation_gas : bool;
 }
 
 let[@inline] context ctxt = ctxt.context
@@ -47,20 +41,9 @@ let[@inline] level ctxt = ctxt.level
 
 let[@inline] timestamp ctxt = ctxt.timestamp
 
-let[@inline] _internal_nonce ctxt = ctxt.internal_nonce
-
-let[@inline] _internal_nonces_used ctxt = ctxt.internal_nonces_used
-
 let[@inline] update_context ctxt context = {ctxt with context}
 
 let[@inline] update_constants ctxt constants = {ctxt with constants}
-
-let[@inline] remaining_operation_gas ctxt = ctxt.remaining_operation_gas
-
-let[@inline] update_remaining_operation_gas ctxt remaining_operation_gas =
-  {ctxt with remaining_operation_gas}
-
-let[@inline] unlimited_operation_gas ctxt = ctxt.unlimited_operation_gas
 
 type storage_error =
   | Incompatible_protocol_version of string
@@ -92,21 +75,15 @@ let constants_key = [version; "constants"]
 let protocol_param_key = ["protocol_parameters"]
 
 let _get_first_level ctxt =
-  Context.find ctxt first_level_key
-  >|= function
-  | None ->
-      storage_error (Missing_key (first_level_key, Get))
+  Context.find ctxt first_level_key >|= function
+  | None -> storage_error (Missing_key (first_level_key, Get))
   | Some bytes -> (
-    match Data_encoding.Binary.of_bytes_opt Raw_level_repr.encoding bytes with
-    | None ->
-        storage_error (Corrupted_data first_level_key)
-    | Some level ->
-        ok level )
+      match Data_encoding.Binary.of_bytes_opt Raw_level_repr.encoding bytes with
+      | None -> storage_error (Corrupted_data first_level_key)
+      | Some level -> ok level)
 
 let set_first_level ctxt level =
-  let bytes =
-    Data_encoding.Binary.to_bytes_exn Raw_level_repr.encoding level
-  in
+  let bytes = Data_encoding.Binary.to_bytes_exn Raw_level_repr.encoding level in
   Context.add ctxt first_level_key bytes >|= ok
 
 type error += Failed_to_parse_parameter of bytes
@@ -198,22 +175,14 @@ let _check_inited ctxt =
       else storage_error (Incompatible_protocol_version s)
 
 let prepare ctxt ~level ~timestamp =
+  Logging.log Notice "prepare: %s %s" (Int32.to_string level) (Time.to_notation timestamp);
   get_constants ctxt >|=? fun constants ->
-  {
-    context = ctxt;
-    constants;
-    timestamp;
-    level;
-    internal_nonce = 0;
-    internal_nonces_used = Int_set.empty;
-    remaining_operation_gas = Gas_limit_repr.Arith.zero;
-    unlimited_operation_gas = false;
-  }
+  {context = ctxt; constants; timestamp; level}
 
-
-type previous_protocol = Genesis of Parameters_repr.t 
+type previous_protocol = Genesis of Parameters_repr.t
 
 let check_and_update_protocol_version ctxt =
+  Logging.log Notice "check_and_update_protocol_version";
   (Context.find ctxt version_key >>= function
    | None ->
        failwith "Internal error: un-initialized context in check_first_block."
@@ -229,18 +198,20 @@ let check_and_update_protocol_version ctxt =
   ok (previous_proto, ctxt)
 
 let prepare_first_block ctxt ~level ~timestamp =
+  Logging.log Notice "prepare_first_block: %s %s" (Int32.to_string level) (Time.to_notation timestamp);
   check_and_update_protocol_version ctxt >>=? fun (previous_proto, ctxt) ->
   (match previous_proto with
   | Genesis param ->
       Raw_level_repr.of_int32 level >>?= fun first_level ->
       set_first_level ctxt first_level >>=? fun ctxt ->
-      add_constants ctxt param.constants >|= ok
-  )
+      add_constants ctxt param.constants >|= ok)
   >>=? fun ctxt ->
-  prepare ctxt ~level ~timestamp
-  >|=? fun ctxt -> (previous_proto, ctxt)
+  prepare ctxt ~level ~timestamp >|=? fun ctxt -> (previous_proto, ctxt)
 
-let activate ctxt h = Updater.activate (context ctxt) h >|= update_context ctxt
+let activate ctxt h = 
+    Logging.log Notice "Activate";
+    Updater.activate (context ctxt) h 
+    >|= update_context ctxt
 
 (* Generic context ********************************************************)
 
@@ -421,12 +392,7 @@ let absolute_key _ k = k
 
 (****** GAS STUFF ***********)
 
-let consume_gas ctxt cost =
-  match Gas_limit_repr.raw_consume (remaining_operation_gas ctxt) cost with
-  | Some gas_counter -> Ok (update_remaining_operation_gas ctxt gas_counter)
-  | None ->
-      if unlimited_operation_gas ctxt then ok ctxt
-      else error Operation_quota_exceeded
+let consume_gas ctxt _cost = ok ctxt
 
 let check_enough_gas ctxt cost =
   consume_gas ctxt cost >>? fun _ -> Result.return_unit

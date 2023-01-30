@@ -1,9 +1,3 @@
-(*
-
-Abstract communication between top and bottom, that is, between the consensus part of the protocol and the storage of it's information
-ledger is a KV struct
- *)
-
 type t = Raw_context.t
 
 type context = t
@@ -19,13 +13,8 @@ module type BASIC_DATA = sig
 end
 
 module Tez = Tez_repr
-
-
-
 include Operation_repr
-
 module Operation = Operation_repr
-
 module Block_header = Block_header_repr
 
 type public_key = Signature.Public_key.t
@@ -34,16 +23,14 @@ type public_key_hash = Signature.Public_key_hash.t
 
 type signature = Signature.t
 
-
 module Raw_context = Raw_context
 module Receipt = Receipt_repr
 
 module Fitness = struct
-    type raw = Fitness.t
+  type raw = Fitness.t
 
   include Fitness_repr
 end
-
 
 module Account = struct
   include Account_repr
@@ -51,7 +38,6 @@ module Account = struct
 end
 
 let description = Raw_context.description
-
 
 module Gas = struct
   include Gas_limit_repr
@@ -91,45 +77,18 @@ module Level = struct
   include Level_repr
 end
 
-
 module Proof_of_work = Proof_of_work
 
 let prepare_first_block = Init_storage.prepare_first_block
+
 let prepare = Init_storage.prepare
 
-(*
-let finalize ?commit_message:message c =
-  let fitness = Fitness.from_int64 (Fitness.current c) in
-  let context = Raw_context.context c in
-  {
-    Updater.context;
-    fitness;
-    message;
-    max_operations_ttl = 60;
-    last_allowed_fork_level = 0l
-  }
-*)
-
-
-
-
-
 let constants = Raw_context.constants
+
 let level = Raw_context.level
+
 let timestamp = Raw_context.timestamp
 
-(* TODO: add the remaining ones
-
-let _timestamp = Raw_context.timestamp
-
-let _internal_nonce = Raw_context.internal_nonce
-
-let _internal_nonces_used = Raw_context.internal_nonces_used
-
-let remaining_operation_gas = Raw_context.remaining_operation_gas
-
-let unlimited_operation_gas = Raw_context.unlimited_operation_gas
-*)
 
 module Constants = struct
   include Constants_repr
@@ -137,16 +96,35 @@ module Constants = struct
   let all ctxt = all_of_parametric (constants ctxt)
 end
 
+let int64_to_bytes i =
+  let b = Bytes.make 8 '\000' in
+  TzEndian.set_int64 b 0 i ;
+  b
 
-let finalize ?commit_message:message (c:context): Updater.validation_result =
-    let fitness = Raw_context.level c in
-    let context = Raw_context.context c in
-    {
-        Updater.context;
-        fitness=[(Data_encoding.Binary.to_bytes_exn Data_encoding.int32 fitness)];
-        message;
-        max_operations_ttl=60;
-        (*TODO fix this*)
-        last_allowed_fork_level=0l;
+let fitness_from_level level =
+  [
+    Bytes.of_string "1";
+    Bytes.of_string "\000";
+    Bytes.of_string "\000";
+    Bytes.of_string "\000";
+    int64_to_bytes level;
+  ]
+
+let finalize ?commit_message:message (c : context) : Updater.validation_result =
+  let fitness = fitness_from_level Int64.(succ (of_int32 (level c))) in
+  let context = Raw_context.context c in
+  Logging.log
+    Notice
+    "finalize: Message %s, Fitness/Level %s, Level %s"
+    (match message with Some a -> a | None -> "NONE")
+    (fitness |> List.map Bytes.to_string |> String.concat ",")
+    (Int32.to_string (level c)) ;
+
+  {
+    Updater.context;
+    fitness;
+    message;
+    max_operations_ttl = 60;
+    (*TODO fix this*)
+    last_allowed_fork_level = 0l;
   }
-

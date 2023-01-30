@@ -10,14 +10,12 @@ let raw_encoding = Operation.encoding
 
 type management_operations_types = 
     TransactionOperation
-    | CoinbaseOperation
     | RevealOperation
 
 type management_operation_content =
   (* Transaction between Accounts*)
   | Transaction of {amount : Tez_repr.tez; destination : Account_repr.t}
   (* Reward transaction*)
-  | Coinbase of Tez_repr.t
   | Reveal of Signature.public_key
 
 type management_operation = {
@@ -50,12 +48,6 @@ let management_operation_content_encoding =
         (function amount, destination -> Transaction {amount; destination});
       case
         (Tag 1)
-        ~title:"Coinbase"
-        (obj1 (req "amount" Tez_repr.encoding))
-        (function Coinbase amount -> Some amount | _ -> None)
-        (function amount -> Coinbase amount);
-      case
-        (Tag 2)
         ~title:"Reveal"
         (obj1 (req "public_key" Signature.Public_key.encoding))
         (function Reveal t -> Some t | _ -> None)
@@ -126,3 +118,10 @@ let check_signature key {shell; protocol_data} =
   match (protocol_data.content, protocol_data.signature) with
   | _, None -> error Missing_signature
   | c, Some signature -> check ~watermark:Generic_operation c signature
+
+let hash (o : operation) =
+  let proto =
+    Data_encoding.Binary.to_bytes_exn protocol_data_encoding o.protocol_data
+  in
+  Operation.hash {shell = o.shell; proto}
+

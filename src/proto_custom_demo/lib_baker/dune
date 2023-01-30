@@ -14,14 +14,15 @@
   tezos-shell-context
   tezos-context
   tezos-context.memory
+  tezos-client-commands
   tezos-rpc-http-client-unix
   tezos-context-ops
   tezos-rpc
   tezos-rpc-http
   lwt-canceler
   lwt-exit
-  uri
-  )
+  uri)
+
  (library_flags (:standard -linkall))
  (flags
   (:standard)
@@ -36,6 +37,7 @@
   -open Tezos_stdlib
   -open Tezos_stdlib_unix
   -open Tezos_shell_context
+  -open Tezos_client_commands
   -open Tezos_context
   -open Tezos_context_ops
   -open Tezos_rpc

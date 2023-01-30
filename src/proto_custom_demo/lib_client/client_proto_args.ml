@@ -2,8 +2,8 @@ open Protocol
 open Alpha_context
 
 type error += Bad_tez_arg of string * string (* Arg_name * value *)
-
 type error += Invalid_account_notation of string * string
+type error += Bad_positive_number_arg of (string * string)
 
 let () =
   register_error_kind
@@ -104,3 +104,14 @@ let account_param ~name ~desc next =
     ~desc:(desc ^ " in " ^ account_format)
     (account_parameter name)
     next
+
+
+let amount_parameter param =
+  Tezos_clic.parameter (fun _ s ->
+      match Int32.of_string_opt s with
+      | Some amount when amount >= 0l -> return amount
+      | _ -> fail (Bad_positive_number_arg (param, s)))
+
+let amount_param ~name ~desc next =
+  Tezos_clic.param ~name ~desc (amount_parameter name) next
+

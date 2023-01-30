@@ -26,6 +26,13 @@ module AccountServices = struct
       ~output:Data_encoding.bool
       RPC_path.(custom_root /: Account_repr.rpc_arg / "revealed")
 
+  let counter =
+    RPC_service.get_service
+      ~description:"Get Account counter"
+      ~query:RPC_query.empty
+      ~output:Data_encoding.z
+      RPC_path.(custom_root /: Account_repr.rpc_arg / "counter")
+
   let register () = 
     let open Services_registration in
     register1
@@ -41,7 +48,13 @@ module AccountServices = struct
     register1
         ~chunked:false
         revealed
-        (fun ctxt key () ()-> Account_storage.is_revealed ctxt key >>=? fun result -> return result )
+        (fun ctxt key () ()-> Account_storage.is_revealed ctxt key >>=? fun result -> return result );
+
+    register1
+        ~chunked:false
+        counter
+        (fun ctxt key () ()-> Account_storage.get_counter ctxt key >>=? fun result -> return result )
+
 
     module Commands = struct
         let get_balance rpc_ctxt chain_blk account =
@@ -50,6 +63,8 @@ module AccountServices = struct
             RPC_context.make_call1 revealed rpc_ctxt chain_blk account () ()
         let exists rpc_ctxt chain_blk account =
             RPC_context.make_call1 exists rpc_ctxt chain_blk account () ()
+        let get_counter rpc_ctxt chain_blk account =
+            RPC_context.make_call1 counter rpc_ctxt chain_blk account () ()
     end
 
 end
@@ -61,7 +76,7 @@ module ConstantServices = struct
 
   let all =
     RPC_service.get_service
-      ~description:"Check if account is revealed"
+      ~description:"Returns current constants"
       ~query:RPC_query.empty
       ~output:Constants.encoding
       custom_root
@@ -72,7 +87,43 @@ module ConstantServices = struct
 
 end
 
+module ContextServices = struct
+  let custom_root =
+  (RPC_path.(open_root / "context" / "other")
+    : RPC_context.t RPC_path.context)
+
+  let current_target =
+    RPC_service.get_service
+      ~description:"Get latest target"
+      ~query:RPC_query.empty
+      ~output:Target_repr.encoding
+      RPC_path.(custom_root /"current_target")
+
+  let current_reward = 
+    RPC_service.get_service
+      ~description:"Get latest reward"
+      ~query:RPC_query.empty
+      ~output:Tez_repr.encoding
+      RPC_path.(custom_root /"current_reward"/:(RPC_arg.like RPC_arg.int32 ~descr:"A block level" "block_level"))
+
+
+  let register () = 
+    let open Services_registration in
+    register0 ~chunked:false current_target (fun ctxt () () -> Header_storage.get_current_target ctxt >>=? fun target -> return target);
+    register1 ~chunked:false current_reward (fun ctxt level () () -> Apply.calculate_current_reward ctxt level >>=? fun target -> return target)
+
+   module Commands = struct
+        let current_target rpc_ctxt chain_blk =
+            RPC_context.make_call0 current_target rpc_ctxt chain_blk () ()
+
+        let current rpc_ctxt chain_blk level =
+            RPC_context.make_call1 current_reward rpc_ctxt chain_blk level () () 
+    end
+
+end
+
 
 let register () =
     AccountServices.register ();
-    ConstantServices.register ()
+    ConstantServices.register ();
+    ContextServices.register ()

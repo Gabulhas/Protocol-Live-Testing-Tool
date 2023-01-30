@@ -13,9 +13,7 @@ let update_current_target c target =
 
 
 (*EPOCH
-
 Lembrar: Não é preciso pÕr a timestamp do header, visto que o que interessa é saber o tempo que demorou o epoch, não "a" média dos timestamps
-
  *)
 let init_epoch_time c =
     Storage.EpochTime.init c (Time.of_seconds 0L)

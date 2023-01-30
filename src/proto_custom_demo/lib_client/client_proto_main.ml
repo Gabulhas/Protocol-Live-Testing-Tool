@@ -23,6 +23,7 @@
 (*                                                                           *)
 (*****************************************************************************)
 
+open Protocol
 module Commands = Client_proto_commands
 
 let commands : Protocol_client_context.full Tezos_clic.command list =
@@ -34,12 +35,77 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
   [
     command
       ~group
-      ~desc:"Gets Account Balance"
+      ~desc:"Shows account balance."
       no_options
       (prefixes ["balance"]
       @@ account_param ~name:"account" ~desc:"Account b58check"
       @@ stop)
-      (fun () msg cctxt -> Commands.get_balance cctxt msg);
+      (fun () msg cctxt ->
+        Commands.get_balance cctxt msg >>=? fun balance ->
+        cctxt#message "Balance: %s" (Tez_repr.to_string balance) >>= fun () ->
+        return_unit);
+    command
+      ~group
+      ~desc:"Shows if account is revealed or not."
+      no_options
+      (prefixes ["revealed"]
+      @@ account_param ~name:"account" ~desc:"Account b58check"
+      @@ stop)
+      (fun () msg cctxt ->
+        Commands.is_revealed cctxt msg >>=? fun is_revealed ->
+        let r_string = (if is_revealed then "YES" else "NO") in
+        cctxt#message "Balance: %s" r_string >>= fun () ->
+        return_unit);
+
+    command
+      ~group
+      ~desc:"Shows current target."
+      no_options
+      (prefixes ["target"] @@ stop)
+      (fun () cctxt ->
+        Commands.get_current_target cctxt >>=? fun current_target ->
+        cctxt#message
+          "Target: %s"
+          (Target_repr.to_hex current_target |> function `Hex h -> h)
+        >>= fun () -> return_unit);
+    command
+      ~group
+      ~desc:"Transfers Tez from Source to Destination"
+      no_options
+      (prefixes ["transfer"]
+      @@ tez_param ~name:"amount" ~desc:"Amount Tez"
+      @@ prefixes ["from"]
+      @@ account_param ~name:"account" ~desc:"Account b58check"
+      @@ prefixes ["to"]
+      @@ account_param ~name:"account" ~desc:"Account b58check"
+      @@ stop)
+      (fun () amount source destination cctxt ->
+        Client_keys.get_key cctxt source >>=? fun (_, src_pk, src_sk) ->
+        let operation_content =
+          Operation_repr.Transaction {amount; destination}
+        in
+        Commands.build_manager_operation_protocol_data
+          cctxt
+          src_pk
+          src_sk
+          operation_content
+        >>=? fun operation -> Commands.inject_op cctxt operation);
+    command
+      ~group
+      ~desc:"Reveals Account Public Key"
+      no_options
+      (prefixes ["reveal"]
+      @@ account_param ~name:"account" ~desc:"Account b58check"
+      @@ stop)
+      (fun () account cctxt ->
+        Client_keys.get_key cctxt account >>=? fun (_, src_pk, src_sk) ->
+        let operation_content = Operation_repr.Reveal src_pk in
+        Commands.build_manager_operation_protocol_data
+          cctxt
+          src_pk
+          src_sk
+          operation_content
+        >>=? fun operation -> Commands.inject_op cctxt operation);
   ]
 
 let () =

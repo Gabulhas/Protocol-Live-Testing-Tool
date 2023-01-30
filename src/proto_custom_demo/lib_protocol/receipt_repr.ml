@@ -44,7 +44,6 @@ type update_origin = Block_application
 
 
 
-(*TODO: this is not yet finished*)
 let update_origin_encoding =
   let open Data_encoding in
   def "operation_metadata.alpha.update_origin"

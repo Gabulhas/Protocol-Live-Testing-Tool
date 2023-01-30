@@ -48,11 +48,9 @@ let relative_position_within_block _a _b = 0
 type validation_mode =
   | Application of {
       block_header : Alpha_context.Block_header.t;
-      current_reward : Tez_repr.t;
     }
   | Partial_application of {
       block_header : Alpha_context.Block_header.t;
-      current_reward : Tez_repr.t;
     }
   | Partial_construction of {
       predecessor : Block_hash.t
@@ -66,7 +64,6 @@ type validation_state = {
   ctxt : Alpha_context.t;
   op_count : int;
   mode: validation_mode;
-  coinbase_count: int;
 }
 
 
@@ -88,20 +85,19 @@ apply_operation: validation_state -> operation -> validation_state
     
 finalize_block: validation_state -> validation_result
     represents the last step in a block validation sequence. It produces the context that will be used as input for the validation of the block’s successor candidates.
-    
-
- *)
+*)
 
 
 let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
     let ctxt = predecessor_context in
     let timestamp =block_header.shell.timestamp  in 
+    Logging.log Notice "begin_application: level %s, timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
     Alpha_context.prepare ctxt ~level ~timestamp:predecessor_timestamp >>=? fun ctxt ->
-    Apply.begin_application ctxt block_header level timestamp >|=? fun (ctxt, current_reward) ->
+    Apply.begin_application ctxt block_header level timestamp >|=? fun ctxt ->
     let mode =
-        Application {block_header; current_reward} in
-    {ctxt; op_count=0; mode; coinbase_count=0}
+        Application {block_header} in
+    {ctxt; op_count=0; mode}
     (*OP count should be 0 because we are just verifying the header*)
 
 
@@ -109,16 +105,17 @@ let begin_partial_application ~chain_id:_ ~ancestor_context ~predecessor_timesta
     let level = block_header.shell.level in
     let ctxt = ancestor_context in
     let timestamp =block_header.shell.timestamp  in 
+    Logging.log Notice "begin_partial_application: level %s, timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
     Alpha_context.prepare ctxt ~level ~timestamp:predecessor_timestamp >>=? fun ctxt ->
-    Apply.begin_application ctxt block_header level timestamp >|=? fun (ctxt, current_reward) ->
+    Apply.begin_application ctxt block_header level timestamp >|=? fun ctxt ->
     let mode =
-        Partial_application {block_header; current_reward} in
-    {ctxt; op_count=0; mode; coinbase_count=0}
+        Partial_application {block_header} in
+    {ctxt; op_count=0; mode}
 
 let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp ~predecessor_level:pred_level ~predecessor_fitness:_ ~predecessor ~timestamp ?(protocol_data : block_header_data option) () =
   let level = Int32.succ pred_level in
   Alpha_context.prepare ctxt ~level ~timestamp:timestamp >>=? fun ctxt ->
-  
+  Logging.log Notice "begin_construction %s" (match protocol_data with Some _ -> "Full construction" | _ -> "Partial construction");
   ( match protocol_data with
   | None ->
 
@@ -133,12 +130,14 @@ let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timest
       (mode, ctxt)
   )
   >|=? fun (mode, ctxt) ->
-  {mode; ctxt; op_count = 0; coinbase_count=0}
+  {mode; ctxt; op_count = 0}
 
 
 
 (*TODO: check if there are more than 1 coinbase transactions and if the reward differs*)
-let apply_operation ({ctxt; op_count; mode; coinbase_count} as data) operation  =
+let apply_operation ({ctxt; op_count; mode} as data) (operation: operation)  =
+  Logging.log Notice "apply_operation %s" (Utils.to_string_json Operation_repr.encoding operation);
+  
   let open Apply_results in
   match mode with
   | Partial_application _ ->
@@ -148,14 +147,14 @@ let apply_operation ({ctxt; op_count; mode; coinbase_count} as data) operation  
       Apply.apply_operation
         ctxt
         operation
-        coinbase_count
-      >|=? fun (ctxt, result, coinbase_count) ->
+      >|=? fun (ctxt, result) ->
       let op_count = op_count + 1 in
 
-      ({data with ctxt; op_count; coinbase_count}, result)
+      ({data with ctxt; op_count}, result)
 
-let finalize_block {mode; ctxt; op_count; coinbase_count} _header : (Updater.validation_result * block_header_metadata, error trace) result Lwt.t=
+let finalize_block {mode; ctxt; op_count} (_shell_header: Block_header.shell_header option) : (Updater.validation_result * block_header_metadata, error trace) result Lwt.t=
  (*TODO make use of the header, I remember that I wanted to do something with the last two cases that I couldn't because I deleted the header parameter by mistake*)
+    Logging.log Notice "finalize_block";
   match mode with
   | Partial_construction _ ->
       let level = Alpha_context.level ctxt in
@@ -177,7 +176,6 @@ let finalize_block {mode; ctxt; op_count; coinbase_count} _header : (Updater.val
         }) |> ok |> Lwt.return
 
 
-
   | Application _
   | Full_construction _ ->
       (*Check the target and stuff*)
@@ -185,10 +183,9 @@ let finalize_block {mode; ctxt; op_count; coinbase_count} _header : (Updater.val
       let block_timestamp = Alpha_context.timestamp ctxt in
       let commit_message =
         Format.asprintf
-          "lvl %ld, %d ops, %d coinbases"
+          "lvl %ld, %d ops"
           level
           op_count
-          coinbase_count
           
       in
       let ctxt = Alpha_context.finalize ~commit_message ctxt in
@@ -202,8 +199,10 @@ let finalize_block {mode; ctxt; op_count; coinbase_count} _header : (Updater.val
 
 
 let init _chain_id ctxt block_header =
+  Logging.log Notice "init: Initializing Protocol";
   let level = block_header.Block_header.level in
   let timestamp = block_header.timestamp in
+  Logging.log Notice "init: Level %s, Timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
   Alpha_context.prepare_first_block ctxt ~level ~timestamp 
   >|=? fun ctxt -> Alpha_context.finalize ctxt
 
