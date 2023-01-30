@@ -8,9 +8,7 @@ type raw = Operation.t = {shell : Operation.shell_header; proto : bytes}
 
 let raw_encoding = Operation.encoding
 
-type management_operations_types = 
-    TransactionOperation
-    | RevealOperation
+type management_operations_types = TransactionOperation | RevealOperation
 
 type management_operation_content =
   (* Transaction between Accounts*)
@@ -25,9 +23,12 @@ type management_operation = {
   content : management_operation_content;
 }
 
-type operation_content= Management of management_operation
+type operation_content = Management of management_operation
 
-type protocol_data = {content : operation_content; signature : Signature.t option}
+type protocol_data = {
+  content : operation_content;
+  signature : Signature.t option;
+}
 
 type operation = {shell : Operation.shell_header; protocol_data : protocol_data}
 
@@ -80,8 +81,8 @@ let operation_content_encoding =
 let protocol_data_encoding =
   let open Data_encoding in
   conv
-    (fun { content; signature } -> (content, signature))
-    (fun (content, signature) -> { content; signature })
+    (fun {content; signature} -> (content, signature))
+    (fun (content, signature) -> {content; signature})
     (obj2
        (req "content" operation_content_encoding)
        (opt "signature" Signature.encoding))
@@ -89,18 +90,17 @@ let protocol_data_encoding =
 let operation_encoding =
   let open Data_encoding in
   conv
-    (fun { shell; protocol_data } -> (shell, protocol_data))
-    (fun (shell, protocol_data) -> { shell; protocol_data })
+    (fun {shell; protocol_data} -> (shell, protocol_data))
+    (fun (shell, protocol_data) -> {shell; protocol_data})
     (obj2
        (req "shell" Operation.shell_header_encoding)
        (req "protocol_data" protocol_data_encoding))
-      
 
 let unsigned_operation_encoding =
-def "operation.alpha.unsigned_operation"
-@@ merge_objs
-     Operation.shell_header_encoding
-     (obj1 (req "contents" operation_content_encoding))
+  def "operation.alpha.unsigned_operation"
+  @@ merge_objs
+       Operation.shell_header_encoding
+       (obj1 (req "contents" operation_content_encoding))
 
 let encoding = operation_encoding
 
@@ -124,4 +124,3 @@ let hash (o : operation) =
     Data_encoding.Binary.to_bytes_exn protocol_data_encoding o.protocol_data
   in
   Operation.hash {shell = o.shell; proto}
-

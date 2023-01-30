@@ -134,7 +134,6 @@ let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timest
 
 
 
-(*TODO: check if there are more than 1 coinbase transactions and if the reward differs*)
 let apply_operation ({ctxt; op_count; mode} as data) (operation: operation)  =
   Logging.log Notice "apply_operation %s" (Utils.to_string_json Operation_repr.encoding operation);
   

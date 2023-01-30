@@ -45,7 +45,6 @@ let operation_worker cctxt state =
         state.canceler <- Lwt_canceler.create () ;
         Lwt_canceler.on_cancel state.canceler (fun () ->
             (*this adds a callback as when it gets canceled*)
-            (*TODO: add something to tell the Miner to stop mining since there's a new block*)
             op_stream_stopper () ;
             Lwt.return_unit) ;
 

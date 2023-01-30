@@ -34,7 +34,7 @@ type manager_operation_result =
 type operation_result =
   | Manager_operation_result of {
       operation_result : manager_operation_result;
-      nonce : int;
+      nonce : Z.t;
     }
   | No_result
 
@@ -154,7 +154,7 @@ let operation_result_encoding =
         ~title:"manager_operation_encoding"
         (obj2
            (req "operation_result" manager_operation_result_encoding)
-           (req "nonce" uint8))
+           (req "nonce" Data_encoding.z))
         (function
           | Manager_operation_result {operation_result; nonce} ->
               Some (operation_result, nonce)

@@ -4,7 +4,6 @@ TO Remember: You don't want the stamp or whatever since the nonce and the whole 
  
 *)
 type contents = {
-  time : Time_repr.t; (*TODO: Remove: time is already in the header*)
   target : Z.t; (*Should be a 256 bit integer*)
   nonce : Int64.t; 
   miner: Account_repr.t;
@@ -28,10 +27,9 @@ let contents_encoding =
   let open Data_encoding in
   def "block_header.custom.encoding"
   @@ conv
-       (fun {time; target; nonce; miner} -> (time, target, nonce, miner))
-       (fun (time, target, nonce, miner) -> {time; target; nonce; miner})
-       (obj4
-          (req "time" Time_repr.encoding)
+       (fun {target; nonce; miner} -> (target, nonce, miner))
+       (fun (target, nonce, miner) -> {target; nonce; miner})
+       (obj3
           (req "target" Data_encoding.z)
           (req "nonce" int64)
           (req "miner" Account_repr.encoding))
@@ -71,7 +69,7 @@ let max_header_length =
       context = Context_hash.zero;
     }
   and fake_contents =
-      {time = Time_repr.zero; target = Target_repr.zero; nonce = 0L; miner= Signature.Public_key_hash.zero}
+      {target = Target_repr.zero; nonce = 0L; miner= Signature.Public_key_hash.zero}
   in
   Data_encoding.Binary.length
     encoding

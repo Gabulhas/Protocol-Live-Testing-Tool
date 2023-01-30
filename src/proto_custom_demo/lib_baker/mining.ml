@@ -26,7 +26,6 @@ let cook_block ({shell; protocol_data} : Block_header_repr.t) nonce target_bytes
     Lwt.return (Some nonce)
   else Lwt.return None
 
-(*TODO: Optimization: make this tail recursive, cause it can loop for a while*)
 let mine_block_loop block target_bytes (start, finish) canceler =
   let open Block_header_repr in
   let {shell; protocol_data} = block in
@@ -46,7 +45,6 @@ let mine_block_loop block target_bytes (start, finish) canceler =
 
 (*Puts the cake in the oven*)
 let mine_header header target_bytes canceler =
-  (*TODO: Here we should be inserting our own key so we receive the monies*)
   let partition_load workers =
     let open Int64 in
     let chuck_size = Int64.div max_int workers in
@@ -87,7 +85,6 @@ let mine_worker (cctxt : Protocol_client_context.full) state account () =
     >>=? fun (header, operations) ->
     cctxt#message "Current Header %s" (Block_header_repr.to_string_json header)
     >>= fun () ->
-    (*TODO: make the whole "if new block then stop " kind of thing*)
     mine_header header target_as_bytes mine_canceler >>= fun mining_resut ->
     cctxt#message
       "Miner: %s"

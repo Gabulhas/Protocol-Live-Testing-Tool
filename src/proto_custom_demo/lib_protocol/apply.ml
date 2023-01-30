@@ -65,7 +65,6 @@ let calculate_current_reward ctxt level =
   ok (current_reward) |> Lwt.return
 
 
-(*TODO: Verify all this type conversions*)
 let calculate_current_target ctxt level current_timestamp =
   let constants = Alpha_context.constants ctxt in
   let epoch_size = constants.difficulty_adjust_epoch_size in
@@ -120,6 +119,8 @@ let check_manager_signature ctxt operation management_operation =
 
 
 let apply_manager_operation_content (ctxt: Raw_context.t) operation source =
+    Account_storage.get_counter ctxt source >>=? fun nonce ->
+
     match operation with
     | Transaction {amount; destination} ->
         Account.debit_account ctxt source amount >>=? fun ctxt ->
@@ -127,16 +128,14 @@ let apply_manager_operation_content (ctxt: Raw_context.t) operation source =
             (*This should be changed to "TransactionResult only" in case I need to add multiple transactions supportj*)
             (ctxt, Apply_results.Manager_operation_result{
                 operation_result= Applied (Transaction_result{balance_updates = [(Account source, Debited amount, Block_application); (Account source, Credited amount, Block_application)]});
-                (*TODO change this*)
-                nonce= 0;
+                nonce;
             })
 
     | Reveal pk ->
         Account.reveal_manager_key ctxt source pk >|=? fun ctxt ->
         (ctxt, Apply_results.Manager_operation_result{
             operation_result= Applied (Reveal_result);
-            (*TODO change this*)
-            nonce= 0;
+            nonce;
         })
 
 
@@ -164,9 +163,6 @@ let apply_operation_contents ctxt operation operation_contents =
     | Management op -> apply_management_operation ctxt operation op
 
 let apply_operation ctxt (operation: Operation.operation):  (t *  operation_result, error trace) result Lwt.t= 
-    (*TODO:  Make it so it's possible to have more than one operation
-    Like: We might want to send a Reveal and a Transaction
-     *)
     apply_operation_contents ctxt operation operation.protocol_data.content >|=? fun (ctxt, operation_result) ->
     (ctxt, operation_result)
 

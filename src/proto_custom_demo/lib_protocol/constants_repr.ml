@@ -23,15 +23,6 @@ type parametric = {
   difficulty_adjust_epoch_size : Int32.t;
   halving_epoch_size : Int32.t;
   reward_multiplier : Tez_repr.t;
-      (*TODO:
-          This is the reward formula from Bitcoin:
-              halving_epoch_size is the the number of blocks per halving epoch (210k)
-              reward_multiplier is the reward multiplier/initial value (50BTC)
-              height is the current height of a block, which comes from the shell header, not the protocol header
-              the formula is the following:
-
-                  reward_multiplier / (2 ^ intpart(height / halving_epoch_size))
-      *)
 }
 
 let parametric_encoding =
