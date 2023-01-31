@@ -60,3 +60,14 @@ module type T =
      and type tree := tree
 
 include T with type t := t
+
+module Cache :
+  Context.CACHE
+    with type t := t
+     and type size := int
+     and type index := int
+     and type identifier := string
+     and type key = Context.Cache.key
+     and type value = Context.Cache.value
+
+

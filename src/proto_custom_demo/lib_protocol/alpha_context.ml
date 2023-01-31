@@ -90,28 +90,18 @@ let level = Raw_context.level
 let timestamp = Raw_context.timestamp
 
 
+module Cache = Cache_repr
+
+
 module Constants = struct
   include Constants_repr
 
   let all ctxt = all_of_parametric (constants ctxt)
 end
 
-let int64_to_bytes i =
-  let b = Bytes.make 8 '\000' in
-  TzEndian.set_int64 b 0 i ;
-  b
 
-let fitness_from_level level =
-  [
-    Bytes.of_string "1";
-    Bytes.of_string "\000";
-    Bytes.of_string "\000";
-    Bytes.of_string "\000";
-    int64_to_bytes level;
-  ]
 
-let finalize ?commit_message:message (c : context) : Updater.validation_result =
-  let fitness = fitness_from_level Int64.(succ (of_int32 (level c))) in
+let finalize ?commit_message:message (c : context) fitness : Updater.validation_result =
   let context = Raw_context.context c in
   let first_level = Raw_context.first_level c in
   Logging.log

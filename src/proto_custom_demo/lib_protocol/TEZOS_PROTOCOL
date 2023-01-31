@@ -9,6 +9,7 @@
 "Apply",
 "Apply_results",
 "Block_header_repr",
+"Cache_repr",
 "Constants_repr",
 "Error",
 "Fitness_repr",

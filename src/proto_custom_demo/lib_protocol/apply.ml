@@ -209,3 +209,7 @@ let begin_construction ctxt current_timestamp (protocol_data:Alpha_context.Block
     check_same_target  protocol_data.target current_target >|=? fun () ->
     ctxt
 
+
+
+let value_of_key ctxt k = Alpha_context.Cache.Admin.value_of_key ctxt k
+

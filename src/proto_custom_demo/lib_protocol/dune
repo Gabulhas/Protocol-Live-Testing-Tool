@@ -38,6 +38,7 @@ Alpha_context
 Apply
 Apply_results
 Block_header_repr
+Cache_repr
 Constants_repr
 Error
 Fitness_repr
@@ -112,6 +113,7 @@ alpha_context.ml
 apply.ml
 apply_results.ml
 block_header_repr.ml
+cache_repr.ml
 constants_repr.ml
 error.ml
 error.mli
@@ -168,6 +170,7 @@ alpha_context.ml
 apply.ml
 apply_results.ml
 block_header_repr.ml
+cache_repr.ml
 constants_repr.ml
 error.ml
 error.mli
@@ -230,6 +233,7 @@ alpha_context.ml
 apply.ml
 apply_results.ml
 block_header_repr.ml
+cache_repr.ml
 constants_repr.ml
 error.ml
 error.mli
