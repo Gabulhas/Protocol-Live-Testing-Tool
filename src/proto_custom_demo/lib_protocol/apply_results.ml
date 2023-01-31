@@ -25,7 +25,6 @@ type apply_results = {
 type successful_manager_operation_result =
   | Reveal_result
   | Transaction_result of {balance_updates : Receipt.balance_updates}
-  | Coinbase_result of {balance_updates : Receipt.balance_updates}
 
 type manager_operation_result =
   | Applied of successful_manager_operation_result
@@ -117,14 +116,6 @@ let successful_manager_operation_result_encoding =
           | Transaction_result {balance_updates} -> Some balance_updates
           | _ -> None)
         (fun balance_updates -> Transaction_result {balance_updates});
-      case
-        (Tag 2)
-        ~title:"Coinbase_result"
-        (obj1 (req "balance_updates" Receipt.balance_updates_encoding))
-        (function
-          | Coinbase_result {balance_updates} -> Some balance_updates
-          | _ -> None)
-        (fun balance_updates -> Coinbase_result {balance_updates});
     ]
 
 let manager_operation_result_encoding =

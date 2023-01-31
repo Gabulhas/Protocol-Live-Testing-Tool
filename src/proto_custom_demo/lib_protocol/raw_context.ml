@@ -31,6 +31,7 @@ type t = {
   constants : Constants_repr.parametric;
   timestamp : Time.t;
   level : Int32.t;
+  first_level : Int32.t;
 }
 
 let[@inline] context ctxt = ctxt.context
@@ -38,6 +39,7 @@ let[@inline] context ctxt = ctxt.context
 let[@inline] constants ctxt = ctxt.constants
 
 let[@inline] level ctxt = ctxt.level
+let[@inline] first_level ctxt = ctxt.level
 
 let[@inline] timestamp ctxt = ctxt.timestamp
 
@@ -74,7 +76,8 @@ let constants_key = [version; "constants"]
 
 let protocol_param_key = ["protocol_parameters"]
 
-let _get_first_level ctxt =
+let get_first_level ctxt =
+  Logging.log Notice "Getting first level" ;
   Context.find ctxt first_level_key >|= function
   | None -> storage_error (Missing_key (first_level_key, Get))
   | Some bytes -> (
@@ -175,14 +178,19 @@ let _check_inited ctxt =
       else storage_error (Incompatible_protocol_version s)
 
 let prepare ctxt ~level ~timestamp =
-  Logging.log Notice "prepare: %s %s" (Int32.to_string level) (Time.to_notation timestamp);
+  Logging.log
+    Notice
+    "prepare: %s %s"
+    (Int32.to_string level)
+    (Time.to_notation timestamp) ;
+  get_first_level ctxt >>=? fun first_level ->
   get_constants ctxt >|=? fun constants ->
-  {context = ctxt; constants; timestamp; level}
+  {context = ctxt; constants; timestamp; level; first_level}
 
 type previous_protocol = Genesis of Parameters_repr.t
 
 let check_and_update_protocol_version ctxt =
-  Logging.log Notice "check_and_update_protocol_version";
+  Logging.log Notice "check_and_update_protocol_version" ;
   (Context.find ctxt version_key >>= function
    | None ->
        failwith "Internal error: un-initialized context in check_first_block."
@@ -198,7 +206,11 @@ let check_and_update_protocol_version ctxt =
   ok (previous_proto, ctxt)
 
 let prepare_first_block ctxt ~level ~timestamp =
-  Logging.log Notice "prepare_first_block: %s %s" (Int32.to_string level) (Time.to_notation timestamp);
+  Logging.log
+    Notice
+    "prepare_first_block: %s %s"
+    (Int32.to_string level)
+    (Time.to_notation timestamp) ;
   check_and_update_protocol_version ctxt >>=? fun (previous_proto, ctxt) ->
   (match previous_proto with
   | Genesis param ->
@@ -208,10 +220,9 @@ let prepare_first_block ctxt ~level ~timestamp =
   >>=? fun ctxt ->
   prepare ctxt ~level ~timestamp >|=? fun ctxt -> (previous_proto, ctxt)
 
-let activate ctxt h = 
-    Logging.log Notice "Activate";
-    Updater.activate (context ctxt) h 
-    >|= update_context ctxt
+let activate ctxt h =
+  Logging.log Notice "Activate" ;
+  Updater.activate (context ctxt) h >|= update_context ctxt
 
 (* Generic context ********************************************************)
 
