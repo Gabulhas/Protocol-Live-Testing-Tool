@@ -13,7 +13,6 @@ let max_operation_data_length = 32 * 1024 (*Move this to constants*)
 let max_block_length = Alpha_context.Block_header.max_header_length
 
 let validation_passes = Updater.[{max_size = 1000; max_op = None}]
-
 let acceptable_pass _op = Some 0
 
 
@@ -109,6 +108,7 @@ let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~p
     (*OP count should be 0 because we are just verifying the header*)
 
 
+(*Maybe change this*)
 let begin_partial_application ~chain_id:_ ~ancestor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
     let ctxt = ancestor_context in
