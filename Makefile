@@ -35,12 +35,15 @@ VALID_PROFILES=dev release static
 
 OCTEZ_BIN=octez-node octez-validator octez-client octez-admin-client \
     octez-signer octez-codec octez-protocol-compiler octez-snoop octez-proxy-server \
+	octez-baker-custom-demo \
     $(foreach p, $(active_protocol_versions_without_number), octez-baker-$(p)) \
     $(foreach p, $(active_protocol_versions_without_number), octez-accuser-$(p)) \
     $(foreach p, $(active_protocol_versions_without_number), octez-tx-rollup-node-$(p)) \
     $(foreach p, $(active_protocol_versions_without_number), octez-tx-rollup-client-$(p)) \
     $(foreach p, $(sc_rollup_protocol_versions_without_number), octez-sc-rollup-node-$(p)) \
-    $(foreach p, $(sc_rollup_protocol_versions_without_number), octez-sc-rollup-client-$(p))
+    $(foreach p, $(sc_rollup_protocol_versions_without_number), octez-sc-rollup-client-$(p)) \
+
+
 
 UNRELEASED_OCTEZ_BIN=octez-dal-node
 
@@ -136,6 +139,7 @@ clean-old-names:
 	@rm -f octez-accuser-015-PtLimaPt
 	@rm -f octez-tx-rollup-node-015-PtLimaPt
 	@rm -f octez-tx-rollup-client-015-PtLimaPt
+	@rm -f octez-baker-custom-demo
 
 # See comment of clean-old-names for an explanation regarding why we do not try
 # to generate the symbolic links from OCTEZ_BIN.
