@@ -71,72 +71,83 @@ let calculate_current_target ctxt level current_timestamp =
   let open Int32 in
   let open Compare.Int32 in
   Logging.log Notice "calculate_current_target: Level: %s | Epoch_size: %s | Reminder %s" 
-  (level |> Int32.to_string)
-  (epoch_size |> Int32.to_string)
-  (rem level epoch_size |> Int32.to_string)
-  ;
+      (level |> Int32.to_string)
+      (epoch_size |> Int32.to_string)
+      (rem level epoch_size |> Int32.to_string)
+      ;
   if rem level epoch_size <> 0l then Header_storage.get_current_target ctxt
   else
     Header_storage.get_current_target ctxt >>=? fun current_target ->
-    Header_storage.last_epoch_time ctxt >>=? fun last_epoch_time ->
+        Header_storage.last_epoch_time ctxt >>=? fun last_epoch_time ->
     let time_taken =
-      Int64.sub
-        (Time.to_seconds current_timestamp)
-        (Time.to_seconds last_epoch_time)
-    in
+        Int64.sub
+    (Time.to_seconds current_timestamp)
+    (Time.to_seconds last_epoch_time)
+  in
+    Logging.log Notice "calculate_current_target: current_timestamp %s | last_epoch_time %s | Sub(current_timestamp - last_epoch_time): %s" (Time.to_notation current_timestamp) (Time.to_notation last_epoch_time ) (Int64.to_string time_taken);
     let epoch_size_seconds =
-      Int64.mul (Time.to_seconds constants.block_time) (Int64.of_int32 epoch_size)
-    in
-    let time_difference_ratio = Int64.div time_taken epoch_size_seconds in
-    Logging.log Notice "calculate_current_target: Current_target %s | Last_epoch_time %s | Time_taken: %s | New_adjust %s" 
-    (Target_repr.to_hex_string current_target)
-    (Time.to_notation last_epoch_time )
-    (time_difference_ratio |> Int64.to_string)
-    (Target_repr.adjust current_target time_difference_ratio |> Target_repr.to_hex_string);
-    Lwt.return (Ok (Target_repr.adjust current_target time_difference_ratio))
+        Int64.mul (Time.to_seconds constants.block_time) (Int64.of_int32 epoch_size)
+            in
+    let result_target = Z.div (Z.mul current_target (Z.of_int64 time_taken)) (Z.of_int64 epoch_size_seconds) in
+    let result_target_with_f: Z.t = (
+        result_target 
+        |> Target_repr.to_hex_string 
+        |> String.map (fun c -> if (Char.equal '0' c) then '0' else 'F')
+        |> Z.of_string
+    ) in
+
+    Logging.log Notice "calculate_current_target: Current_target %s | Last_epoch_time %s | Time_taken: %s | Epoch_size_seconds: %s | New_adjust: %s | Final_adjust: %s" 
+        (Target_repr.to_hex_string current_target)
+        (Time.to_notation last_epoch_time )
+        (time_taken |> Int64.to_string)
+        (epoch_size_seconds |> Int64.to_string)
+        (result_target |> Target_repr.to_hex_string)
+        (result_target_with_f |> Target_repr.to_hex_string)
+        ;
+    Lwt.return (Ok (result_target_with_f))
 
 let check_manager_signature ctxt operation management_operation =
-  (* Basically:
-      if we have a reveal operation, we already know the pk from the operation itself (find source)
+    (* Basically:
+        if we have a reveal operation, we already know the pk from the operation itself (find source)
       if we dont, we look it up on our storage
       *)
-  let find_source (op:management_operation) =
-      match op with
+let find_source (op:management_operation) =
+    match op with
         | {source; fee = _ ; counter = _; content = Reveal key} ->
-          (source, Some key)
-      | {source; fee = _ ; counter = _; content = _ }->
-          (source, None)
-  in
+                (source, Some key)
+        | {source; fee = _ ; counter = _; content = _ }->
+                (source, None)
+    in
   let (source, source_key) = find_source management_operation in
   ( match source_key with
   | Some key ->
-      return key
+          return key
   | None ->
-      Account.get_manager_key ctxt source )
+          Account.get_manager_key ctxt source )
   >>=? fun public_key ->
-  Lwt.return (Operation.check_signature public_key operation)
+      Lwt.return (Operation.check_signature public_key operation)
 
 
 
 let apply_manager_operation_content (ctxt: Raw_context.t) operation source =
     Account_storage.get_counter ctxt source >>=? fun nonce ->
 
-    match operation with
+        match operation with
     | Transaction {amount; destination} ->
-        Account.debit_account ctxt source amount >>=? fun ctxt ->
-        Account.credit_account ctxt destination amount >|=? fun ctxt ->
-            (*This should be changed to "TransactionResult only" in case I need to add multiple transactions supportj*)
-            (ctxt, Apply_results.Manager_operation_result{
-                operation_result= Applied (Transaction_result{balance_updates = [(Account source, Debited amount, Block_application); (Account source, Credited amount, Block_application)]});
+            Account.debit_account ctxt source amount >>=? fun ctxt ->
+                Account.credit_account ctxt destination amount >|=? fun ctxt ->
+                    (*This should be changed to "TransactionResult only" in case I need to add multiple transactions supportj*)
+                    (ctxt, Apply_results.Manager_operation_result{
+                        operation_result= Applied (Transaction_result{balance_updates = [(Account source, Debited amount, Block_application); (Account source, Credited amount, Block_application)]});
                 nonce;
-            })
+                        })
 
     | Reveal pk ->
-        Account.reveal_manager_key ctxt source pk >|=? fun ctxt ->
-        (ctxt, Apply_results.Manager_operation_result{
-            operation_result= Applied (Reveal_result);
+            Account.reveal_manager_key ctxt source pk >|=? fun ctxt ->
+                (ctxt, Apply_results.Manager_operation_result{
+                    operation_result= Applied (Reveal_result);
             nonce;
-        })
+                    })
 
 
 open Apply_results
@@ -149,22 +160,22 @@ let verify_manager_operation ctxt operation (management_operation: management_op
     executar mas com backtrace
      *)
     Account.check_counter_increment ctxt management_operation.source management_operation.counter >>=? fun () ->
-    check_manager_signature ctxt operation management_operation 
+        check_manager_signature ctxt operation management_operation 
 
 
 let apply_management_operation ctxt operation management_operation: ((t * operation_result, error trace) result Lwt.t) =
     let {source; fee=_; counter=_; content} = management_operation in
     verify_manager_operation ctxt operation management_operation >>=?  fun () ->
-    Account.increment_counter ctxt source >>=? fun ctxt -> 
-    apply_manager_operation_content ctxt content source
-            
+        Account.increment_counter ctxt source >>=? fun ctxt -> 
+            apply_manager_operation_content ctxt content source
+
 let apply_operation_contents ctxt operation operation_contents = 
     match operation_contents with
     | Management op -> apply_management_operation ctxt operation op
 
 let apply_operation ctxt (operation: Operation.operation):  (t *  operation_result, error trace) result Lwt.t= 
     apply_operation_contents ctxt operation operation.protocol_data.content >|=? fun (ctxt, operation_result) ->
-    (ctxt, operation_result)
+        (ctxt, operation_result)
 
 
 let credit_miner ctxt miner reward = 
@@ -174,40 +185,40 @@ let credit_miner ctxt miner reward =
 let check_same_target this_target current_target = 
     if not (Z.equal this_target current_target) then
         InvalidTarget(this_target, current_target) |> fail
-    else
-        Lwt.return (ok (()))
+  else
+      Lwt.return (ok (()))
 
 
-        (*
+      (*
 let timestamp_in_future ctxt current_timestamp previous_timestamp = 
     (*
     if it's 2 times in the future, it returns error
      *)
-    let constants = Alpha_context.constants ctxt in
-    let open Int64 in
-    let open Compare.Int64 in
-    if Time.diff current_timestamp previous_timestamp > Int64.mul (Time.to_seconds constants.block_time) 2L then
-        fail TimestampInTheFuture
+let constants = Alpha_context.constants ctxt in
+let open Int64 in
+let open Compare.Int64 in
+if Time.diff current_timestamp previous_timestamp > Int64.mul (Time.to_seconds constants.block_time) 2L then
+    fail TimestampInTheFuture
     else
         Lwt.return (ok())
-        
+
 *)
 
 
 let begin_application ctxt (block_header: Alpha_context.Block_header.t) level current_timestamp: (t , error trace) result Lwt.t = 
     let open Proof_of_work in
     calculate_current_target ctxt level current_timestamp >>=? fun current_target ->
-    check_same_target  block_header.protocol_data.target current_target >>=? fun () ->
-    check_block block_header current_target >|=? fun () ->
-    (ctxt)
+        check_same_target  block_header.protocol_data.target current_target >>=? fun () ->
+            check_block block_header current_target >|=? fun () ->
+                (ctxt)
 
 
 let begin_construction ctxt current_timestamp (protocol_data:Alpha_context.Block_header.protocol_data) =
     calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp >>=? fun current_target ->
-    calculate_current_reward ctxt (level ctxt) >>=? fun current_reward ->
-    credit_miner ctxt protocol_data.miner current_reward >>=? fun ctxt ->
-    check_same_target  protocol_data.target current_target >|=? fun () ->
-    ctxt
+        calculate_current_reward ctxt (level ctxt) >>=? fun current_reward ->
+            credit_miner ctxt protocol_data.miner current_reward >>=? fun ctxt ->
+                check_same_target  protocol_data.target current_target >|=? fun () ->
+                    ctxt
 
 
 
