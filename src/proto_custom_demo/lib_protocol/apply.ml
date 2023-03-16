@@ -75,26 +75,24 @@ let calculate_current_target ctxt level current_timestamp =
       (epoch_size |> Int32.to_string)
       (rem level epoch_size |> Int32.to_string)
       ;
-  if rem level epoch_size <> 0l then Header_storage.get_current_target ctxt
+  if rem level epoch_size <> 0l then Header_storage.get_current_target ctxt >>=? fun current_target -> 
+      (current_target, ctxt) |> ok |> Lwt.return
   else
     Header_storage.get_current_target ctxt >>=? fun current_target ->
-        Header_storage.last_epoch_time ctxt >>=? fun last_epoch_time ->
+    Header_storage.last_epoch_time ctxt >>=? fun last_epoch_time ->
     let time_taken =
         Int64.sub
     (Time.to_seconds current_timestamp)
     (Time.to_seconds last_epoch_time)
   in
-    Logging.log Notice "calculate_current_target: current_timestamp %s | last_epoch_time %s | Sub(current_timestamp - last_epoch_time): %s" (Time.to_notation current_timestamp) (Time.to_notation last_epoch_time ) (Int64.to_string time_taken);
+    Logging.log Notice "calculate_current_target: current_target %s | current_timestamp %s | last_epoch_time %s | Sub(current_timestamp - last_epoch_time): %s" (current_target |> Target_repr.to_hex_string) (Time.to_notation current_timestamp) (Time.to_notation last_epoch_time ) (Int64.to_string time_taken);
     let epoch_size_seconds =
         Int64.mul (Time.to_seconds constants.block_time) (Int64.of_int32 epoch_size)
             in
+
+
     let result_target = Z.div (Z.mul current_target (Z.of_int64 time_taken)) (Z.of_int64 epoch_size_seconds) in
-    let result_target_with_f: Z.t = (
-        result_target 
-        |> Target_repr.to_hex_string 
-        |> String.map (fun c -> if (Char.equal '0' c) then '0' else 'F')
-        |> Z.of_string
-    ) in
+    Logging.log Notice "Temp %s" ( result_target |> Target_repr.to_hex_string) ;
 
     Logging.log Notice "calculate_current_target: Current_target %s | Last_epoch_time %s | Time_taken: %s | Epoch_size_seconds: %s | New_adjust: %s | Final_adjust: %s" 
         (Target_repr.to_hex_string current_target)
@@ -102,9 +100,14 @@ let calculate_current_target ctxt level current_timestamp =
         (time_taken |> Int64.to_string)
         (epoch_size_seconds |> Int64.to_string)
         (result_target |> Target_repr.to_hex_string)
-        (result_target_with_f |> Target_repr.to_hex_string)
+        (result_target |> Target_repr.to_hex_string)
         ;
-    Lwt.return (Ok (result_target_with_f))
+
+    Header_storage.update_current_target ctxt result_target >>=? fun (ctxt) ->
+    (current_target, ctxt) |> ok |> Lwt.return
+
+    (*Lwt.return (Ok (result_target))
+    *)
 
 let check_manager_signature ctxt operation management_operation =
     (* Basically:
@@ -207,14 +210,14 @@ if Time.diff current_timestamp previous_timestamp > Int64.mul (Time.to_seconds c
 
 let begin_application ctxt (block_header: Alpha_context.Block_header.t) level current_timestamp: (t , error trace) result Lwt.t = 
     let open Proof_of_work in
-    calculate_current_target ctxt level current_timestamp >>=? fun current_target ->
+    calculate_current_target ctxt level current_timestamp >>=? fun (current_target, ctxt) ->
         check_same_target  block_header.protocol_data.target current_target >>=? fun () ->
             check_block block_header current_target >|=? fun () ->
                 (ctxt)
 
 
 let begin_construction ctxt current_timestamp (protocol_data:Alpha_context.Block_header.protocol_data) =
-    calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp >>=? fun current_target ->
+    calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp >>=? fun (current_target, ctxt) ->
         calculate_current_reward ctxt (level ctxt) >>=? fun current_reward ->
             credit_miner ctxt protocol_data.miner current_reward >>=? fun ctxt ->
                 check_same_target  protocol_data.target current_target >|=? fun () ->

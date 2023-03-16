@@ -1,9 +1,11 @@
 open Protocol_client_context
-open Protocol.Block_header_repr
+open Protocol
+open Block_header_repr
 
 let get_new_header_protocol_data cctxt account =
-  Client_proto_commands.get_current_target cctxt >>=? fun target ->
-  return {target; nonce = 0L; miner = account}
+    Client_proto_commands.get_current_target cctxt >>=? fun target ->
+    cctxt#message "Building new protocolo data with target bytes %s" (Target_repr.to_hex_string target) >>= fun () ->
+    return {target; nonce = 0L; miner = account}
 
 (*Pre because it doens't have the nonce yet*)
 let get_new_possible_block cctxt state account =

@@ -73,18 +73,16 @@ let mine_worker (cctxt : Protocol_client_context.full) state account () =
   let rec worker_loop () =
     cctxt#message "Starting Mining worker loop" >>= fun () ->
     Client_proto_commands.get_current_target cctxt >>=? fun current_target ->
+    cctxt#message "Got target as bytes %s" (Target_repr.to_hex_string current_target) >>= fun () ->
     let target_as_bytes =
       match Target_repr.to_bytes current_target with
       | Some a -> a
       | _ -> assert false
     in
-    cctxt#message "Got target as bytes %s" (Bytes.to_string target_as_bytes)
-    >>= fun () ->
     let mine_canceler = Lwt_canceler.create () in
     Header_creation.get_new_possible_block cctxt state account
     >>=? fun (header, operations) ->
-    cctxt#message "Current Header %s" (Block_header_repr.to_string_json header)
-    >>= fun () ->
+    cctxt#message "Current Header %s" (Block_header_repr.to_string_json header)       >>= fun () ->
     mine_header header target_as_bytes mine_canceler >>= fun mining_resut ->
     cctxt#message
       "Miner: %s"
