@@ -75,3 +75,16 @@ let level_from_raw raw =
 
 let from_raw raw =
   match level_from_raw raw with Ok level -> {level} | _ -> assert false
+
+let to_string fitness=
+    fitness
+    |> to_raw
+    |> List.map (fun b ->
+            match Hex.of_bytes b with
+            | `Hex a -> a
+    )
+    |> String.concat  ","
+
+
+
+

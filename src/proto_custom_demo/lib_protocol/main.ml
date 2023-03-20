@@ -100,7 +100,9 @@ let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~p
     let timestamp =block_header.shell.timestamp  in 
     Logging.log Notice "begin_application: level %s, timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
     Alpha_context.prepare ctxt ~level ~timestamp:predecessor_timestamp >>=? fun ctxt ->
-    Apply.begin_application ctxt block_header level timestamp >|=? fun ctxt ->
+    let predecessor_level = Int32.pred level in
+    Apply.begin_application ctxt block_header predecessor_level timestamp >|=? fun ctxt ->
+
     let fitness= Fitness_repr.({level}) in
     let mode =
         Application {block_header; fitness} in
@@ -212,86 +214,109 @@ let () =
 
 
 let finalize_block {mode; ctxt; op_count} (shell_header: Block_header.shell_header option) : (Updater.validation_result * block_header_metadata, error trace) result Lwt.t=
- (*TODO make use of the header, I remember that I wanted to do something with the last two cases that I couldn't because I deleted the header parameter by mistake*)
     Logging.log Notice "finalize_block";
   match mode with
   | Partial_construction {predecessor_fitness; _} ->
-      let level = Alpha_context.level ctxt in
-      let fitness = predecessor_fitness in
-      let block_timestamp = Alpha_context.timestamp ctxt in
-      let ctxt = Alpha_context.finalize ctxt fitness in
-      ( ctxt, Apply_results.{ 
-          level;
+          let level = Alpha_context.level ctxt in
+
+          Logging.log Notice "Finalize Partial_construction: Fitness %s | Level %s | Shell_header %s  | ctxt level: %s" 
+          (predecessor_fitness |> Fitness.to_bytes |> Hex.of_bytes |>  function `Hex a -> a) 
+          (Int32.to_string level)
+          (match shell_header with None -> "None" | Some a -> Utils.to_string_json (Block_header.shell_header_encoding) a)
+          (ctxt |> Raw_context.level |> Int32.to_string)
+          ;
+
+          let fitness = predecessor_fitness in
+          let block_timestamp = Alpha_context.timestamp ctxt in
+          let ctxt = Alpha_context.finalize ctxt fitness in
+          ( ctxt, Apply_results.{ 
+              level;
           block_timestamp;
-        }) |> ok |> Lwt.return
+  }) |> ok |> Lwt.return
   | Partial_application {fitness; _} ->
-      let level = Alpha_context.level ctxt in
-      let block_timestamp = Alpha_context.timestamp ctxt in
-      let fitness_raw = Fitness_repr.to_raw fitness in
-      let ctxt = Alpha_context.finalize ctxt fitness_raw in
-      ( ctxt, Apply_results.{ 
-          level;
+          let level = Alpha_context.level ctxt in
+
+          Logging.log Notice "Finalize Partial_application: Fitness %s | Level %s | Shell_header %s  | ctxt level: %s" 
+          (Fitness_repr.to_string fitness)
+          (Int32.to_string level)
+          (match shell_header with None -> "None" | Some a -> Utils.to_string_json (Block_header.shell_header_encoding) a)
+          (ctxt |> Raw_context.level |> Int32.to_string)
+          ;
+
+          let block_timestamp = Alpha_context.timestamp ctxt in
+          let ctxt = Alpha_context.finalize ctxt (Fitness_repr.to_raw fitness) in
+          ( ctxt, Apply_results.{ 
+              level;
           block_timestamp;
-        }) |> ok |> Lwt.return
+  }) |> ok |> Lwt.return
 
 
   | Application {block_header; fitness} ->
-      let cache_nonce = cache_nonce_from_block_header block_header.shell block_header.protocol_data in
+          let cache_nonce = cache_nonce_from_block_header block_header.shell block_header.protocol_data in
+          let level = Alpha_context.level ctxt in
 
-      let level = Alpha_context.level ctxt in
-      let block_timestamp = Alpha_context.timestamp ctxt in
-      let commit_message =
-        Format.asprintf
+          Logging.log Notice "Finalize Application: Fitness %s | Level %s | Shell_header %s  | ctxt level: %s" 
+          (Fitness_repr.to_string fitness)
+          (Int32.to_string level)
+          (match shell_header with None -> "None" | Some a -> Utils.to_string_json (Block_header.shell_header_encoding) a)
+          (ctxt |> Raw_context.level |> Int32.to_string)
+          ;
+
+
+
+          let block_timestamp = Alpha_context.timestamp ctxt in
+          let commit_message =
+              Format.asprintf
           "lvl %ld, %d ops"
           level
           op_count
-          
-      in
+
+          in
     Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun ctxt ->
 
-      let ctxt = Alpha_context.finalize ~commit_message ctxt (Fitness_repr.to_raw fitness) in
-      ( ctxt, Apply_results.{ 
-          level;
+        let ctxt = Alpha_context.finalize ~commit_message ctxt (Fitness_repr.to_raw fitness) in
+        ( ctxt, Apply_results.{ 
+            level;
           block_timestamp;
 
-    }) |> ok |> Lwt.return
+  }) |> ok |> Lwt.return
 
 
   | Full_construction {level; protocol_data; _} ->
-      (*Check the target and stuff*)
-      Option.value_e shell_header ~error:(Error_monad.trace_of_error Missing_shell_header) >>?= fun shell_header ->
+          (*Check the target and stuff*)
+          Option.value_e shell_header ~error:(Error_monad.trace_of_error Missing_shell_header) >>?= fun shell_header ->
 
-      let cache_nonce =
-        cache_nonce_from_block_header shell_header protocol_data
-      in
+              let cache_nonce =
+                  cache_nonce_from_block_header shell_header protocol_data
+        in
       Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun ctxt ->
-      let fitness = Fitness_repr.to_raw {level} in
-      let block_timestamp = Alpha_context.timestamp ctxt in
-      let commit_message =
-        Format.asprintf
+          let fitness = Fitness_repr.to_raw {level} in
+          let block_timestamp = Alpha_context.timestamp ctxt in
+          let commit_message =
+              Format.asprintf
           "lvl %ld, %d ops"
           level
           op_count
-          
-      in
+
+          in
       let ctxt = Alpha_context.finalize ~commit_message ctxt fitness in
       ( ctxt, Apply_results.{ 
           level;
           block_timestamp;
 
-        }) |> ok |> Lwt.return
+          }) |> ok |> Lwt.return
 
 
 
 
 let init _chain_id ctxt block_header =
-  Logging.log Notice "init: Initializing Protocol";
+                  Logging.log Notice "init: Initializing Protocol";
   let level = block_header.Block_header.level in
   let timestamp = block_header.timestamp in
   Logging.log Notice "init: Level %s, Timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
   Alpha_context.prepare_first_block ctxt ~level ~timestamp  >>=? fun ctxt ->  
-  let cache_nonce =
-      cache_nonce_from_block_header block_header
+      let cache_nonce =
+          cache_nonce_from_block_header block_header
       {
           target= Target_repr.zero;
           nonce = Int64.zero;
@@ -299,21 +324,21 @@ let init _chain_id ctxt block_header =
       }
   in
   Alpha_context.Cache.Admin.sync ctxt ~cache_nonce  >>= fun ctxt ->
-  let fitness = Fitness_repr.({level}) in
-  let fitness_raw = Fitness_repr.to_raw fitness in
-  return (Alpha_context.finalize ctxt fitness_raw)
+      let fitness = Fitness_repr.({level}) in
+      let fitness_raw = Fitness_repr.to_raw fitness in
+      return (Alpha_context.finalize ctxt fitness_raw)
 
 
-let rpc_services =
-  Services.register ();
+              let rpc_services =
+                  Services.register ();
   Services_registration.get_rpc_services ()
 
-let compare_operations _ _ = 0
+              let compare_operations _ _ = 0
 
-let value_of_key ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp:_
+              let value_of_key ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp:_
     ~predecessor_level:pred_level ~predecessor_fitness:_ ~predecessor:_
     ~timestamp =
-  let level = Int32.succ pred_level in
-  Alpha_context.prepare ctxt ~level ~timestamp
+        let level = Int32.succ pred_level in
+        Alpha_context.prepare ctxt ~level ~timestamp
   >>=? fun ctxt -> return (Apply.value_of_key ctxt)
 
