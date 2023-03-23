@@ -221,7 +221,7 @@ let prepare_first_block ctxt ~level ~timestamp =
   prepare ctxt ~level ~timestamp >|=? fun ctxt -> (previous_proto, ctxt)
 
 let activate ctxt h =
-  Logging.log Notice "Activate" ;
+  Logging.log Notice "Activating" ;
   Updater.activate (context ctxt) h >|= update_context ctxt
 
 (* Generic context ********************************************************)

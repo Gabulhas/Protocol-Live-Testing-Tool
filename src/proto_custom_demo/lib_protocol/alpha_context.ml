@@ -103,7 +103,7 @@ end
 
 let finalize ?commit_message:message (c : context) fitness : Updater.validation_result =
   let context = Raw_context.context c in
-  let first_level = Raw_context.first_level c in
+  let current_level = Raw_context.level c in
   Logging.log
     Notice
     "finalize: Message %s, Fitness/Level %s, Level %s"
@@ -117,5 +117,5 @@ let finalize ?commit_message:message (c : context) fitness : Updater.validation_
     message;
     max_operations_ttl = 60;
     (*TODO fix this*)
-    last_allowed_fork_level = first_level;
+    last_allowed_fork_level = current_level |> Int32.pred;
   }

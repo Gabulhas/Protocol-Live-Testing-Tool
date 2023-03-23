@@ -13,8 +13,8 @@ let max_operation_data_length = 32 * 1024 (*Move this to constants*)
 let max_block_length = Alpha_context.Block_header.max_header_length
 
 let validation_passes = Updater.[{max_size = 1000; max_op = None}]
-let acceptable_pass _op = Some 0
 
+let acceptable_pass _op = Some 0
 
 type block_header_metadata = Apply_results.block_metadata
 let block_header_metadata_encoding =  Apply_results.block_metadata_encoding
@@ -272,7 +272,7 @@ let finalize_block {mode; ctxt; op_count} (shell_header: Block_header.shell_head
           op_count
 
           in
-    Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun ctxt ->
+        Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun ctxt ->
 
         let ctxt = Alpha_context.finalize ~commit_message ctxt (Fitness_repr.to_raw fitness) in
         ( ctxt, Apply_results.{ 
@@ -329,13 +329,13 @@ let init _chain_id ctxt block_header =
       return (Alpha_context.finalize ctxt fitness_raw)
 
 
-              let rpc_services =
-                  Services.register ();
+let rpc_services =
+    Services.register ();
   Services_registration.get_rpc_services ()
 
-              let compare_operations _ _ = 0
+let compare_operations _ _ = 0
 
-              let value_of_key ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp:_
+let value_of_key ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp:_
     ~predecessor_level:pred_level ~predecessor_fitness:_ ~predecessor:_
     ~timestamp =
         let level = Int32.succ pred_level in
