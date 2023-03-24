@@ -125,7 +125,14 @@ let begin_partial_application ~chain_id:_ ~ancestor_context ~predecessor_timesta
 
 let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp ~predecessor_level ~predecessor_fitness ~predecessor ~timestamp ?(protocol_data : block_header_data option) () =
   let level = Int32.succ predecessor_level in
-  Logging.log Notice "begin_construction %s" (match protocol_data with Some _ -> "Full construction" | _ -> "Partial construction");
+  Logging.log Notice "begin_construction %s | predecessor_level %s | predecessor_fitness %s | predecessor_hash %s | protocol_data %s" 
+  (match protocol_data with Some _ -> "Full construction" | _ -> "Partial construction")
+  (Int32.to_string predecessor_level)
+  (Utils.to_string_json Fitness.encoding predecessor_fitness)
+  (predecessor |> Block_hash.to_bytes |> Hex.of_bytes |> function `Hex a -> a)
+  (match protocol_data with None -> "" | Some a -> Utils.to_string_json block_header_data_encoding a)
+  ;
+
   Alpha_context.prepare ctxt ~level ~timestamp:timestamp >>=? fun ctxt ->
   ( match protocol_data with
   | None ->
@@ -166,6 +173,9 @@ let apply_operation ({ctxt; op_count; mode} as data) (operation: operation)  =
 
 
 
+      (*
+      maybe it all ends with fde
+       *)
 let cache_nonce_from_block_header shell contents =
   let open Alpha_context.Block_header in
   let shell =
@@ -214,7 +224,9 @@ let () =
 
 
 let finalize_block {mode; ctxt; op_count} (shell_header: Block_header.shell_header option) : (Updater.validation_result * block_header_metadata, error trace) result Lwt.t=
-    Logging.log Notice "finalize_block";
+  Logging.log Notice "finalize_block %s"
+  (Raw_context.to_string ctxt)
+  ;
   match mode with
   | Partial_construction {predecessor_fitness; _} ->
           let level = Alpha_context.level ctxt in
@@ -272,7 +284,7 @@ let finalize_block {mode; ctxt; op_count} (shell_header: Block_header.shell_head
           op_count
 
           in
-        Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun ctxt ->
+        Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun _ ->
 
         let ctxt = Alpha_context.finalize ~commit_message ctxt (Fitness_repr.to_raw fitness) in
         ( ctxt, Apply_results.{ 
@@ -286,10 +298,10 @@ let finalize_block {mode; ctxt; op_count} (shell_header: Block_header.shell_head
           (*Check the target and stuff*)
           Option.value_e shell_header ~error:(Error_monad.trace_of_error Missing_shell_header) >>?= fun shell_header ->
 
-              let cache_nonce =
-                  cache_nonce_from_block_header shell_header protocol_data
+        let cache_nonce =
+                cache_nonce_from_block_header shell_header protocol_data
         in
-      Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun ctxt ->
+      Alpha_context.Cache.Admin.sync ctxt ~cache_nonce >>= fun _ ->
           let fitness = Fitness_repr.to_raw {level} in
           let block_timestamp = Alpha_context.timestamp ctxt in
           let commit_message =
@@ -315,18 +327,9 @@ let init _chain_id ctxt block_header =
   let timestamp = block_header.timestamp in
   Logging.log Notice "init: Level %s, Timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
   Alpha_context.prepare_first_block ctxt ~level ~timestamp  >>=? fun ctxt ->  
-      let cache_nonce =
-          cache_nonce_from_block_header block_header
-      {
-          target= Target_repr.zero;
-          nonce = Int64.zero;
-          miner = Signature.Public_key_hash.zero;
-      }
-  in
-  Alpha_context.Cache.Admin.sync ctxt ~cache_nonce  >>= fun ctxt ->
-      let fitness = Fitness_repr.({level}) in
-      let fitness_raw = Fitness_repr.to_raw fitness in
-      return (Alpha_context.finalize ctxt fitness_raw)
+  let fitness = Fitness_repr.({level}) in
+  let fitness_raw = Fitness_repr.to_raw fitness in
+  return (Alpha_context.finalize ctxt fitness_raw)
 
 
 let rpc_services =

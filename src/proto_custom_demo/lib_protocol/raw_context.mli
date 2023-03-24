@@ -70,4 +70,5 @@ module Cache :
      and type key = Context.Cache.key
      and type value = Context.Cache.value
 
+val to_string : t -> string
 

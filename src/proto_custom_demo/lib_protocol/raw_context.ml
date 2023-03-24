@@ -449,3 +449,11 @@ module Cache = struct
     |> update_context c
 end
 
+
+
+let to_string ctxt = 
+    "Ctxt(" ^
+    "Timestamp " ^ (Time.to_notation ctxt.timestamp) ^
+    "| Level " ^ (Int32.to_string ctxt.level) ^
+    "| first_level " ^ (Int32.to_string ctxt.first_level) ^
+    ")"
