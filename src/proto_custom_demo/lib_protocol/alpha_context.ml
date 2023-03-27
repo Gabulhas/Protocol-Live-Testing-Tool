@@ -103,13 +103,14 @@ end
 
 let finalize ?commit_message:message (c : context) fitness : Updater.validation_result =
   let context = Raw_context.context c in
-  let current_level = Raw_context.level c in
   Logging.log
     Notice
-    "finalize: Message %s, Fitness/Level %s, Level %s"
+    "FINALIZE: Message %s, Fitness/Level %s, Level %s, First_level %s"
     (match message with Some a -> a | None -> "NONE")
     (fitness |> List.map Bytes.to_string |> String.concat ",")
-    (Int32.to_string (level c)) ;
+    (Int32.to_string (level c)) 
+    (Raw_context.first_level c |> Int32.to_string) 
+    ;
 
   {
     Updater.context;
@@ -117,5 +118,5 @@ let finalize ?commit_message:message (c : context) fitness : Updater.validation_
     message;
     max_operations_ttl = 60;
     (*TODO fix this*)
-    last_allowed_fork_level = current_level |> Int32.pred;
+    last_allowed_fork_level = c |> Raw_context.first_level |> Int32.pred;
   }

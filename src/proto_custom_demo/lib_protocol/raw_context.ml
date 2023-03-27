@@ -180,7 +180,7 @@ let _check_inited ctxt =
 let prepare ctxt ~level ~timestamp =
   Logging.log
     Notice
-    "prepare: %s %s"
+    "prepare: Level %s | Timestamp %s"
     (Int32.to_string level)
     (Time.to_notation timestamp) ;
   get_first_level ctxt >>=? fun first_level ->

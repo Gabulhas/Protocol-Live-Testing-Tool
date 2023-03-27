@@ -114,4 +114,3 @@ let amount_parameter param =
 
 let amount_param ~name ~desc next =
   Tezos_clic.param ~name ~desc (amount_parameter name) next
-

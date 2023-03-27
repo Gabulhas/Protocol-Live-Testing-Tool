@@ -69,52 +69,55 @@ let mine_header header target_bytes canceler =
       Lwt.return_unit) ;
   Lwt.pick tasks >>= fun a -> Lwt.return a
 
-let mine_worker (cctxt : Protocol_client_context.full) state account () =
-  let rec worker_loop () =
-    cctxt#message "Starting Mining worker loop" >>= fun () ->
-    Client_proto_commands.get_current_target cctxt >>=? fun current_target ->
-    cctxt#message "Got target as bytes %s" (Target_repr.to_hex_string current_target) >>= fun () ->
-    let target_as_bytes =
-      match Target_repr.to_bytes current_target with
-      | Some a -> a
-      | _ -> assert false
-    in
-    let mine_canceler = Lwt_canceler.create () in
-    Header_creation.get_new_possible_block cctxt state account
-    >>=? fun (header, operations) ->
-    cctxt#message "Current Header %s" (Block_header_repr.to_string_json header)       >>= fun () ->
-    mine_header header target_as_bytes mine_canceler >>= fun mining_resut ->
-    cctxt#message
-      "Miner: %s"
-      (match mining_resut with
-      | None -> "NOT FOUND"
-      | Some a ->
-          "Nonce: "
-          ^ (a.protocol_data.nonce |> Int64.to_string)
-          ^ " Hash: "
-          ^ (Block_header_repr.hash a |> Block_hash.to_hex |> function
-             | `Hex a -> a))
-    >>= fun () ->
-    match mining_resut with
-    | None -> worker_loop ()
-    | Some a ->
-        let protocol_bytes =
-          Data_encoding.Binary.to_bytes_exn
-            Block_header_repr.contents_encoding
-            a.protocol_data
+let mine_worker (cctxt : Protocol_client_context.full) state account (total_to_mine:int32) () =
+  let rec worker_loop to_mine () =
+    if Int32.equal 0l to_mine then 
+        return_unit
+    else
+        cctxt#message "Starting Mining worker loop" >>= fun () ->
+        Client_proto_commands.get_current_target cctxt >>=? fun current_target ->
+        cctxt#message "Got target as bytes %s" (Target_repr.to_hex_string current_target) >>= fun () ->
+        let target_as_bytes =
+          match Target_repr.to_bytes current_target with
+          | Some a -> a
+          | _ -> assert false
         in
-        let header : Block_header.t =
-          {shell = a.shell; protocol_data = protocol_bytes}
-        in
-        let header_encoded =
-          Data_encoding.Binary.to_bytes_exn Block_header.encoding header
-        in
-
-        Shell_services.Injection.block cctxt header_encoded operations
-        >>=? fun block_hash ->
+        let mine_canceler = Lwt_canceler.create () in
+        Header_creation.get_new_possible_block cctxt state account
+        >>=? fun (header, operations) ->
+        cctxt#message "Current Header %s" (Block_header_repr.to_string_json header)       >>= fun () ->
+        mine_header header target_as_bytes mine_canceler >>= fun mining_resut ->
         cctxt#message
-          "Found and Injected new block %s"
-          (block_hash |> Block_hash.to_hex |> function `Hex e -> e)
-        >>= fun () -> worker_loop ()
+          "Miner: %s"
+          (match mining_resut with
+          | None -> "NOT FOUND"
+          | Some a ->
+              "Nonce: "
+              ^ (a.protocol_data.nonce |> Int64.to_string)
+              ^ " Hash: "
+              ^ (Block_header_repr.hash a |> Block_hash.to_hex |> function
+                 | `Hex a -> a))
+        >>= fun () ->
+        match mining_resut with
+        | None -> worker_loop (Int32.pred to_mine) ()
+        | Some a ->
+            let protocol_bytes =
+              Data_encoding.Binary.to_bytes_exn
+                Block_header_repr.contents_encoding
+                a.protocol_data
+            in
+            let header : Block_header.t =
+              {shell = a.shell; protocol_data = protocol_bytes}
+            in
+            let header_encoded =
+              Data_encoding.Binary.to_bytes_exn Block_header.encoding header
+            in
+
+            Shell_services.Injection.block cctxt header_encoded operations
+            >>=? fun block_hash ->
+            cctxt#message
+              "Found and Injected new block %s"
+              (block_hash |> Block_hash.to_hex |> function `Hex e -> e)
+            >>= fun () -> worker_loop (Int32.pred to_mine) ()
   in
-  cctxt#message "Starting Mining worker loop" >>= fun () -> worker_loop ()
+  cctxt#message "Starting Mining worker loop" >>= fun () -> worker_loop total_to_mine ()

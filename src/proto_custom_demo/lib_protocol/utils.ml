@@ -9,3 +9,6 @@ let integer_positive_pow a b : int =
   let rec aux c res = if c > 0 then aux (pred c) (res * a) else res in
 
   aux b 1
+
+let bytes_to_hex_string b = 
+    b |> Hex.of_bytes |> function `Hex a -> a 
