@@ -97,12 +97,8 @@ finalize_block: validation_state -> validation_result
 
 
 
-let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~predecessor_fitness (block_header: block_header) =
+let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
-    let level_from_fitness = Fitness_repr.from_raw predecessor_fitness in
-    if not (Int32.equal level_from_fitness.level (Int32.pred level)) then
-        Lwt.return (error (Fitness_repr.Invalid_fitness predecessor_fitness))
-    else
         let ctxt = predecessor_context in
         let timestamp =block_header.shell.timestamp  in 
         Logging.log Notice "begin_application: level %s, timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
@@ -118,12 +114,8 @@ let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~p
 
 
 (*Maybe change this*)
-let begin_partial_application ~chain_id:_ ~ancestor_context ~predecessor_timestamp ~predecessor_fitness (block_header: block_header) =
+let begin_partial_application ~chain_id:_ ~ancestor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
-    let level_from_fitness = Fitness_repr.from_raw predecessor_fitness in
-    if not (Int32.equal level_from_fitness.level (Int32.pred level)) then
-        Lwt.return (error (Fitness_repr.Invalid_fitness predecessor_fitness))
-    else
         let ctxt = ancestor_context in
         let timestamp =block_header.shell.timestamp  in 
         let predecessor_level = Int32.pred level in

@@ -74,7 +74,7 @@ let level_from_raw raw =
   | _ -> error (Invalid_fitness raw)
 
 let from_raw raw =
-  match level_from_raw raw with Ok level -> {level} | _ -> assert false
+  match level_from_raw raw with Ok level -> {level} | _ -> {level = 1l}
 
 let to_string fitness=
     fitness
