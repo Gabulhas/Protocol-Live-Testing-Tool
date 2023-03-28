@@ -3,6 +3,10 @@ open Block_header_repr
 open Bake_state
 open Protocol_client_context
 
+
+(*Number of workers*)
+let workers = 20L
+
 (*Checks if there's already another block found*)
 (*This should start in a different thread as the cooking part since it will cancel the baking*)
 let rec is_late (cctxt : Protocol_client_context.full) state current_level
@@ -58,7 +62,6 @@ let mine_header header target_bytes canceler =
     aux 0L
   in
 
-  let workers = 20L in
   let tasks =
     List.mapi
       (fun _ rng -> mine_block_loop header target_bytes rng canceler)
