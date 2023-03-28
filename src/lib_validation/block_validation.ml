@@ -590,30 +590,30 @@ module Make (Proto : Registered_protocol.T) = struct
     let open Lwt_result_syntax in
     let block_hash = Block_header.hash block_header in
     match cached_result with
-    | Some (({result; _} as cached_result), context)
-      when Context_hash.equal
-             result.validation_store.context_hash
-             block_header.shell.context
-           && Time.Protocol.equal
-                result.validation_store.timestamp
-                block_header.shell.timestamp ->
-        let*! () = Validation_events.(emit using_preapply_result block_hash) in
-        let*! context_hash =
-          if simulate then
-            Lwt.return
-            @@ Context_ops.hash
-                 ~time:block_header.shell.timestamp
-                 ?message:result.validation_store.message
-                 context
-          else
-            Context_ops.commit
-              ~time:block_header.shell.timestamp
-              ?message:result.validation_store.message
-              context
-        in
-        assert (
-          Context_hash.equal context_hash result.validation_store.context_hash) ;
-        return cached_result
+    (* | Some (({result; _} as cached_result), context) *)
+    (*   when Context_hash.equal *)
+    (*          result.validation_store.context_hash *)
+    (*          block_header.shell.context *)
+    (*        && Time.Protocol.equal *)
+    (*             result.validation_store.timestamp *)
+    (*             block_header.shell.timestamp -> *)
+    (*     let*! () = Validation_events.(emit using_preapply_result block_hash) in *)
+    (*     let*! context_hash = *)
+    (*       if simulate then *)
+    (*         Lwt.return *)
+    (*         @@ Context_ops.hash *)
+    (*              ~time:block_header.shell.timestamp *)
+    (*              ?message:result.validation_store.message *)
+    (*              context *)
+    (*       else *)
+    (*         Context_ops.commit *)
+    (*           ~time:block_header.shell.timestamp *)
+    (*           ?message:result.validation_store.message *)
+    (*           context *)
+    (*     in *)
+    (*     assert ( *)
+    (*       Context_hash.equal context_hash result.validation_store.context_hash) ; *)
+    (*     return cached_result *)
     | Some _ | None ->
         let* () =
           check_block_header ~predecessor_block_header block_hash block_header
