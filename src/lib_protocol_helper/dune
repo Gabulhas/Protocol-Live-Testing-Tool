@@ -1,0 +1,10 @@
+(library 
+  (name custom_protocol_helper)
+  (public_name custom-protocol-helper)
+  (preprocess (pps ppx_deriving_encoding))
+  (libraries 
+    ppx_deriving_encoding data-encoding
+
+    )
+
+  )

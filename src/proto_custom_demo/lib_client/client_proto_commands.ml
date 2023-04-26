@@ -40,6 +40,13 @@ let get_current_target (cctxt : Protocol_client_context.full) =
     (cctxt#chain, cctxt#block)
   >>=? fun target -> return target
 
+let get_next_target (cctxt : Protocol_client_context.full) level timestamp=
+  Services.ContextServices.Commands.next_target
+    cctxt
+    (cctxt#chain, cctxt#block)
+    level timestamp
+  >>=? fun target -> return target
+
 let get_current_counter (cctxt : Protocol_client_context.full) account =
   Services.AccountServices.Commands.get_counter
     cctxt

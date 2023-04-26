@@ -209,24 +209,26 @@ if Time.diff current_timestamp previous_timestamp > Int64.mul (Time.to_seconds c
 
 let begin_application ctxt (block_header : Alpha_context.Block_header.t) level
     current_timestamp : (t, error trace) result Lwt.t =
-  let open Proof_of_work in
-  calculate_current_target ctxt level current_timestamp
+        let open Proof_of_work in
+        calculate_current_target ctxt level current_timestamp
   >>=? fun (current_target, ctxt) ->
-  calculate_current_reward ctxt (Raw_context.level ctxt)
-  >>=? fun current_reward ->
-  credit_miner ctxt block_header.protocol_data.miner current_reward
+      calculate_current_reward ctxt (Raw_context.level ctxt)
+      >>=? fun current_reward ->
+          credit_miner ctxt block_header.protocol_data.miner current_reward
   >>=? fun ctxt ->
-  check_same_target block_header.protocol_data.target current_target
+      check_same_target block_header.protocol_data.target current_target
   >>=? fun () ->
-  check_block block_header current_target >|=? fun () -> ctxt
+      check_block block_header current_target >|=? fun () -> ctxt
 
 let begin_construction ctxt current_timestamp
-    (protocol_data : Alpha_context.Block_header.protocol_data) =
+    (protocol_data : Alpha_context.Block_header.protocol_data): (t, error trace) result Lwt.t =
   calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp
   >>=? fun (current_target, ctxt) ->
-  calculate_current_reward ctxt (level ctxt) >>=? fun current_reward ->
-  credit_miner ctxt protocol_data.miner current_reward >>=? fun ctxt ->
-  check_same_target protocol_data.target current_target >|=? fun () -> ctxt
+      calculate_current_reward ctxt (level ctxt) 
+      >>=? fun current_reward ->
+          credit_miner ctxt protocol_data.miner current_reward 
+  >>=? fun ctxt ->
+      check_same_target protocol_data.target current_target 
+  >|=? fun () -> ctxt
 
 let value_of_key ctxt k = Alpha_context.Cache.Admin.value_of_key ctxt k
-

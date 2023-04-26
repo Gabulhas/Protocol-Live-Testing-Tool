@@ -19,7 +19,6 @@ cp ./TEMPLATES/TEZOS_PROTOCOL $directory_to_fetch/TEZOS_PROTOCOL
 cp ./TEMPLATES/lib_protocol:dune $directory_to_fetch/dune
 
 sed -i "s/TEMPLATE_MODULES_PART_QUOTED/${quoted_modules//$'\n'/\\n}/" $directory_to_fetch/TEZOS_PROTOCOL
-
 sed -i "s/TEMPLATE_MODULES_PART/${module_names//$'\n'/\\n}/" $directory_to_fetch/dune
 sed -i "s/TEMPLATE_FILES_PART/${ocamlfiles//$'\n'/\\n}/" $directory_to_fetch/dune
 

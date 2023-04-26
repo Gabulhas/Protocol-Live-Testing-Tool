@@ -54,7 +54,7 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
       (fun () msg cctxt ->
         Commands.is_revealed cctxt msg >>=? fun is_revealed ->
         let r_string = (if is_revealed then "YES" else "NO") in
-        cctxt#message "Balance: %s" r_string >>= fun () ->
+        cctxt#message "Balance: %sꜩ" r_string >>= fun () ->
         return_unit);
 
     command

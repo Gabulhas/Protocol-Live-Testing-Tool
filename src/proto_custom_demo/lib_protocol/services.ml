@@ -99,6 +99,7 @@ module ContextServices = struct
       ~output:Target_repr.encoding
       RPC_path.(custom_root /"current_target")
 
+
   let current_reward = 
     RPC_service.get_service
       ~description:"Get latest reward"
@@ -106,18 +107,35 @@ module ContextServices = struct
       ~output:Tez_repr.encoding
       RPC_path.(custom_root /"current_reward"/:(RPC_arg.like RPC_arg.int32 ~descr:"A block level" "block_level"))
 
+  let level_and_timestamp =
+    let open Data_encoding in
+    obj2
+      (req "level" int32)
+      (req "timestamp" Time.encoding)
+
+
+  let current_target_post =
+    RPC_service.post_service
+      ~description:"Get the target given a level and a timestamp"
+      ~query:RPC_query.empty
+      ~input:level_and_timestamp
+      ~output:Target_repr.encoding
+      RPC_path.(custom_root /"current_target")
+
 
   let register () = 
     let open Services_registration in
     register0 ~chunked:false current_target (fun ctxt () () -> Header_storage.get_current_target ctxt >>=? fun target -> return target);
-    register1 ~chunked:false current_reward (fun ctxt level () () -> Apply.calculate_current_reward ctxt level >>=? fun target -> return target)
+    register1 ~chunked:false current_reward (fun ctxt level () () -> Apply.calculate_current_reward ctxt level >>=? fun target -> return target);
+    register0 ~chunked:false current_target_post (fun ctxt () (level, timestamp) -> Apply.calculate_current_target ctxt level timestamp>>=? fun (target, _) -> return target);
 
    module Commands = struct
         let current_target rpc_ctxt chain_blk =
             RPC_context.make_call0 current_target rpc_ctxt chain_blk () ()
-
         let current rpc_ctxt chain_blk level =
             RPC_context.make_call1 current_reward rpc_ctxt chain_blk level () () 
+        let next_target rpc_ctxt chain_blk level timestamp =
+            RPC_context.make_call0 current_target_post rpc_ctxt chain_blk () (level, timestamp)
     end
 
 end

@@ -136,11 +136,12 @@ let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timest
   (match protocol_data with None -> "" | Some a -> Utils.to_string_json block_header_data_encoding a)
   ;
 
-  Alpha_context.prepare ctxt ~level ~timestamp:timestamp >>=? fun ctxt ->
+  Alpha_context.prepare ctxt ~level ~timestamp >>=? fun ctxt ->
   ( match protocol_data with
   | None ->
 
-          let mode = Partial_construction {predecessor; predecessor_fitness; predecessor_level} in
+      let mode = Partial_construction {predecessor; predecessor_fitness; predecessor_level} in
+      Apply.calculate_current_target ctxt (Raw_context.level ctxt) timestamp >>=? fun (_, ctxt) ->
       Lwt.return (ok(mode, ctxt))
 
   | Some protocol_data ->
@@ -159,7 +160,7 @@ let apply_operation ({ctxt; op_count; mode} as data) (operation: operation)  =
     Logging.log Notice "apply_operation %s" (Utils.to_string_json Operation_repr.encoding operation);
   match mode with
   | Partial_application _ ->
-          Apply.apply_operation
+        Apply.apply_operation
         ctxt
         operation
       >|=? fun (ctxt, result) ->
@@ -175,10 +176,6 @@ let apply_operation ({ctxt; op_count; mode} as data) (operation: operation)  =
           ({data with ctxt; op_count}, result)
 
 
-
-          (*
-      maybe it all ends with fde
-       *)
 let cache_nonce_from_block_header shell contents =
     let open Alpha_context.Block_header in
     let shell =
@@ -309,16 +306,16 @@ let finalize_block {mode; ctxt; op_count} (shell_header: Block_header.shell_head
 
 
 
-          let init chain_id ctxt block_header =
-              Logging.log Notice "init: Initializing Protocol";
-  let level = block_header.Block_header.level in
-  let timestamp = block_header.timestamp in
-  Logging.log Notice "init: ContextHash %s | Level %s | Timestamp %s | Chain_id %s" 
-  (block_header.context |> Context_hash.to_bytes |> Utils.bytes_to_hex_string )
-  (Int32.to_string level) 
-  (Time.to_notation timestamp)
-  ( chain_id |> Chain_id.to_bytes |> Utils.bytes_to_hex_string)
-  ;
+let init chain_id ctxt block_header =
+    Logging.log Notice "init: Initializing Protocol";
+    let level = block_header.Block_header.level in
+    let timestamp = block_header.timestamp in
+    Logging.log Notice "init: ContextHash %s | Level %s | Timestamp %s | Chain_id %s" 
+    (block_header.context |> Context_hash.to_bytes |> Utils.bytes_to_hex_string )
+    (Int32.to_string level) 
+    (Time.to_notation timestamp)
+    ( chain_id |> Chain_id.to_bytes |> Utils.bytes_to_hex_string)
+    ;
 
   Alpha_context.prepare_first_block ctxt ~level ~timestamp  >>=? fun ctxt ->  
       let cache_nonce =
@@ -348,4 +345,3 @@ let finalize_block {mode; ctxt; op_count} (shell_header: Block_header.shell_head
         let level = Int32.succ pred_level in
         Alpha_context.prepare ctxt ~level ~timestamp
   >>=? fun ctxt -> return (Apply.value_of_key ctxt)
-
