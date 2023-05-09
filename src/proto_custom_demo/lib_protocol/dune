@@ -6,6 +6,7 @@
  (public_name tezos-protocol-custom-demo.environment)
  (instrumentation (backend bisect_ppx))
  (libraries
+  custom-protocol-helper
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
  (modules Tezos_protocol_environment_custom_demo))
@@ -22,6 +23,7 @@
  (public_name tezos-protocol-custom-demo.raw)
  (instrumentation (backend bisect_ppx))
  (libraries
+  custom-protocol-helper
   tezos-protocol-custom-demo.environment)
  (library_flags (:standard -linkall))
  (flags

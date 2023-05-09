@@ -225,5 +225,6 @@
 (package (name tezt-performance-regression))
 (package (name tezt-self-tests))
 (package (name tezt-tezos))
+(package (name custom-protocol-helper))
 ; This file was automatically generated, do not edit.
 ; Edit file manifest/main.ml instead.

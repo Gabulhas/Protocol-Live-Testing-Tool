@@ -1,3 +1,5 @@
+module MakeHeader (ENV : Tezos_protocol_environment.PROTOCOL) = struct end
+(*
 open Data_encoding
 
 (*
@@ -109,3 +111,4 @@ module ProtocolHeader =
 
       let encoding = protocol_data_enc
     end)
+ *)

@@ -4,9 +4,9 @@ TO Remember: You don't want the stamp or whatever since the nonce and the whole 
  
 *)
 type contents = {
-  target : Z.t; (*Should be a 256 bit integer*)
-  nonce : Int64.t; 
-  miner: Account_repr.t;
+  target : Target_repr.t; (*Should be a 256 bit integer*)
+  nonce : Int64.t;
+  miner : Account_repr.t;
 }
 
 type protocol_data = contents
@@ -69,7 +69,11 @@ let max_header_length =
       context = Context_hash.zero;
     }
   and fake_contents =
-      {target = Target_repr.zero; nonce = 0L; miner= Signature.Public_key_hash.zero}
+    {
+      target = Target_repr.zero;
+      nonce = 0L;
+      miner = Signature.Public_key_hash.zero;
+    }
   in
   Data_encoding.Binary.length
     encoding
@@ -77,7 +81,7 @@ let max_header_length =
 
 (** Header parsing entry point  *)
 
-let hash_raw = Block_header.hash 
+let hash_raw = Block_header.hash
 
 let hash {shell; protocol_data} =
   Block_header.hash
@@ -87,9 +91,16 @@ let hash {shell; protocol_data} =
         Data_encoding.Binary.to_bytes_exn protocol_data_encoding protocol_data;
     }
 
-let to_bytes = let open Data_encoding in Binary.to_bytes_exn encoding 
-let of_bytes = let open Data_encoding in Binary.of_bytes_opt encoding 
+let to_bytes =
+  let open Data_encoding in
+  Binary.to_bytes_exn encoding
 
+let of_bytes =
+  let open Data_encoding in
+  Binary.of_bytes_opt encoding
 
-let to_string_json header = 
-    Format.asprintf "%a" (Data_encoding.Json.pp) (Data_encoding.Json.construct encoding header)
+let to_string_json header =
+  Format.asprintf
+    "%a"
+    Data_encoding.Json.pp
+    (Data_encoding.Json.construct encoding header)
