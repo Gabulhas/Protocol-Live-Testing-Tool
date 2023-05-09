@@ -1,12 +1,3 @@
-(*So far is a copy of Tez_repr*)
-module Name = struct
-  let name = "custom-demo"
-end
-
-module A = Tezos_protocol_environment.V6.Make (Name) ()
-
-module B = Custom_protocol_helper.Header_make.MakeHeader (A)
-
 let id = "nbits"
 
 let name = "nBits"

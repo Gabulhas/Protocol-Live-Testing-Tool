@@ -181,7 +181,7 @@ let cache_nonce_from_block_header shell contents =
     let shell =
         Block_header.
       {
-          level = 0l;
+          level = Int32.zero;
         proto_level = 0;
         predecessor = shell.predecessor;
         timestamp = Time.of_seconds 0L;

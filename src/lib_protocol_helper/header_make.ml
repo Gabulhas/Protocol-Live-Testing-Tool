@@ -1,7 +1,3 @@
-module MakeHeader (ENV : Tezos_protocol_environment.PROTOCOL) = struct end
-(*
-open Data_encoding
-
 (*
 End of Dummy Stuff
  *)
@@ -18,6 +14,9 @@ end) (ProtocolData : sig
   val encoding : t Data_encoding.t
 end) =
 struct
+  include Tezos_base
+  include Tezos_crypto
+
   type t = {shell : Block_header.shell_header; protocol_data : ProtocolData.t}
 
   type block_header = t
@@ -54,7 +53,18 @@ struct
 
   let max_header_length =
     (*Change this to actual shell header fake*)
-    let fake_shell = Block_header.{level = 0l} in
+    let fake_shell =
+      {
+        Block_header.level = 0l;
+        proto_level = 0;
+        predecessor = Block_hash.zero;
+        timestamp = Time.Protocol.of_seconds 0L;
+        validation_passes = 0;
+        operations_hash = Operation_list_list_hash.zero;
+        fitness = [];
+        context = Context_hash.zero;
+      }
+    in
     Data_encoding.Binary.length
       encoding
       {shell = fake_shell; protocol_data = ProtocolData.fake_protocol_data}
@@ -111,4 +121,3 @@ module ProtocolHeader =
 
       let encoding = protocol_data_enc
     end)
- *)

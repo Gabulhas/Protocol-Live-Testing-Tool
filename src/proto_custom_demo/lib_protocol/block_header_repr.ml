@@ -1,12 +1,46 @@
 (*
 
 TO Remember: You don't want the stamp or whatever since the nonce and the whole header make up the stamp ;)
- 
 *)
+
+open Data_encoding
+
 type contents = {
-  target : Target_repr.t; (*Should be a 256 bit integer*)
-  nonce : Int64.t;
-  miner : Account_repr.t;
+  target : Target_repr.t;
+  nonce : Int64.t; [@encoding int64]
+  miner : Account_repr.t; [@encoding Account_repr.encoding]
+}
+[@@deriving encoding {module_name = "Data_encoding"}]
+
+type protocol_data = contents
+
+module Header =
+  Custom_protocol_helper.Header_make.MakeHeader
+    (struct
+      type t = contents
+
+      let encoding = contents_enc
+    end)
+    (struct
+      type t = contents
+
+      let fake_protocol_data =
+        {
+          target = Target_repr.zero;
+          nonce = 0L;
+          miner = Signature.Public_key_hash.zero;
+        }
+
+      let encoding = contents_enc
+    end)
+
+include Header
+
+(*
+type contents = {
+  target : Target_repr.t;
+  nonce : int64; [@encoding int64]
+  miner : Account_repr.t; [@encoding Account_repr.encoding]
 }
 
 type protocol_data = contents
@@ -104,3 +138,4 @@ let to_string_json header =
     "%a"
     Data_encoding.Json.pp
     (Data_encoding.Json.construct encoding header)
+*)

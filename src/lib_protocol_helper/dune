@@ -3,8 +3,9 @@
   (public_name custom-protocol-helper)
   (preprocess (pps ppx_deriving_encoding))
   (libraries 
-    ppx_deriving_encoding data-encoding
+    ppx_deriving_encoding
     tezos-protocol-environment
+    tezos-base
     )
 
   )

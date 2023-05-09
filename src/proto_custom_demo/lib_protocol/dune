@@ -23,7 +23,7 @@
  (public_name tezos-protocol-custom-demo.raw)
  (instrumentation (backend bisect_ppx))
  (libraries
-  custom-protocol-helper
+  ppx_deriving_encoding
   tezos-protocol-custom-demo.environment)
  (library_flags (:standard -linkall))
  (flags
@@ -33,6 +33,7 @@
   -open Tezos_protocol_environment_custom_demo
   -open Tezos_protocol_environment_custom_demo.Pervasives
   -open Tezos_protocol_environment_custom_demo.Error_monad)
+ (preprocess (pps ppx_deriving_encoding))
  (modules
    Account_repr
 Account_storage
@@ -277,3 +278,13 @@ utils.ml
    (chdir
     %{workspace_root}
     (run %{bin:octez-embedded-protocol-packer} %{src_dir} custom_demo)))))
+
+
+(env (_ 
+    (env-vars 
+        (PPX_ENCODING_DEBUG true)
+        (PPX_ENCODING_MODULE true)
+
+
+
+)))
