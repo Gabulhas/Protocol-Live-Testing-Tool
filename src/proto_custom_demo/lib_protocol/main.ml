@@ -175,13 +175,14 @@ let apply_operation ({ctxt; op_count; mode} as data) (operation: operation)  =
 
           ({data with ctxt; op_count}, result)
 
+(**)
 
 let cache_nonce_from_block_header shell contents =
     let open Alpha_context.Block_header in
     let shell =
         Block_header.
       {
-          level = Int32.zero;
+        level = Int32.of_int 0;
         proto_level = 0;
         predecessor = shell.predecessor;
         timestamp = Time.of_seconds 0L;

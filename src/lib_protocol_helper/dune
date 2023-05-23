@@ -6,6 +6,5 @@
     ppx_deriving_encoding
     tezos-protocol-environment
     tezos-base
-    )
-
+   )
   )

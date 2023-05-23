@@ -1,4 +1,10 @@
 (*
+
+module Name = struct
+  let name = "custom-demo"
+end
+
+include Tezos_protocol_environment.V6.Make (Name) ()
 End of Dummy Stuff
  *)
 
@@ -14,9 +20,6 @@ end) (ProtocolData : sig
   val encoding : t Data_encoding.t
 end) =
 struct
-  include Tezos_base
-  include Tezos_crypto
-
   type t = {shell : Block_header.shell_header; protocol_data : ProtocolData.t}
 
   type block_header = t
@@ -58,7 +61,7 @@ struct
         Block_header.level = 0l;
         proto_level = 0;
         predecessor = Block_hash.zero;
-        timestamp = Time.Protocol.of_seconds 0L;
+        timestamp = Time.of_seconds 0L;
         validation_passes = 0;
         operations_hash = Operation_list_list_hash.zero;
         fitness = [];
@@ -95,29 +98,3 @@ struct
       Data_encoding.Json.pp
       (Data_encoding.Json.construct encoding header)
 end
-
-type contents = {priority : int32; proof_of_work_nonce : bytes}
-[@@deriving encoding {module_name = "Data_encoding"}]
-
-type protocol_data = {contents : contents; signature : Bytes.t}
-[@@deriving encoding {module_name = "Data_encoding"}]
-
-module ProtocolHeader =
-  MakeHeader
-    (struct
-      type t = contents
-
-      let encoding = contents_enc
-    end)
-    (struct
-      type t = protocol_data
-
-      let fake_protocol_data =
-        {
-          contents =
-            {priority = 0l; proof_of_work_nonce = Bytes.of_string "DUMMY"};
-          signature = Bytes.of_string "DUMMY";
-        }
-
-      let encoding = protocol_data_enc
-    end)

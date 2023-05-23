@@ -3,14 +3,12 @@
 TO Remember: You don't want the stamp or whatever since the nonce and the whole header make up the stamp ;)
 *)
 
-open Data_encoding
-
 type contents = {
   target : Target_repr.t;
-  nonce : Int64.t; [@encoding int64]
+  nonce : Int64.t;
   miner : Account_repr.t; [@encoding Account_repr.encoding]
 }
-[@@deriving encoding {module_name = "Data_encoding"}]
+[@@deriving encoding]
 
 type protocol_data = contents
 
@@ -19,7 +17,7 @@ module Header =
     (struct
       type t = contents
 
-      let encoding = contents_enc
+      let encoding = contents_encoding
     end)
     (struct
       type t = contents
@@ -31,10 +29,14 @@ module Header =
           miner = Signature.Public_key_hash.zero;
         }
 
-      let encoding = contents_enc
+      let encoding = contents_encoding
     end)
 
 include Header
+
+(*
+
+*)
 
 (*
 type contents = {
@@ -44,6 +46,7 @@ type contents = {
 }
 
 type protocol_data = contents
+
 
 type t = {shell : Block_header.shell_header; protocol_data : contents}
 
@@ -138,4 +141,5 @@ let to_string_json header =
     "%a"
     Data_encoding.Json.pp
     (Data_encoding.Json.construct encoding header)
+
 *)
