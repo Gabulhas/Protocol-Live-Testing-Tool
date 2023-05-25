@@ -2,13 +2,6 @@
 TODO:
     Remove this and make it so the protocol decides the environment
  *)
-module Name = struct
-  let name = "custom-demo"
-end
-
-module Environment = Tezos_protocol_environment.V6.Make (Name) ()
-
-include Environment
 
 (*
 End of Dummy Stuff

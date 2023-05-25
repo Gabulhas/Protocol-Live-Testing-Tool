@@ -6,6 +6,7 @@
  (public_name tezos-protocol-custom-demo.environment)
  (instrumentation (backend bisect_ppx))
  (libraries
+  custom-protocol-helper
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
  (modules Tezos_protocol_environment_custom_demo))
@@ -17,20 +18,12 @@
    %{targets}
    "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
 
-(rule
- (targets header_make_gen.ml)
- (deps (:input ../../lib_protocol_helper/header_make.ml))
- (action
-  (write-file
-   %{targets}
-   "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
 
 (library
  (name tezos_raw_protocol_custom_demo)
  (public_name tezos-protocol-custom-demo.raw)
  (instrumentation (backend bisect_ppx))
  (libraries
-  custom-protocol-helper
   ppx_deriving_encoding
   tezos-protocol-custom-demo.environment)
  (library_flags (:standard -linkall))
@@ -43,7 +36,6 @@
   -open Tezos_protocol_environment_custom_demo.Error_monad)
  (preprocess (pps ppx_deriving_encoding))
  (modules
-   Header_make_gen
    Account_repr
 Account_storage
 Alpha_context
@@ -52,7 +44,6 @@ Apply_results
 Block_header_repr
 Cache_repr
 Constants_repr
-Error
 Fitness_repr
 Gas_limit_repr
 Header_storage
@@ -70,7 +61,6 @@ Raw_context_intf
 Raw_context
 Raw_level_repr
 Receipt_repr
-Saturation_repr
 Services
 Services_registration
 Storage_costs
@@ -127,8 +117,6 @@ apply_results.ml
 block_header_repr.ml
 cache_repr.ml
 constants_repr.ml
-error.ml
-error.mli
 fitness_repr.ml
 gas_limit_repr.ml
 header_storage.ml
@@ -147,7 +135,6 @@ raw_context.ml
 raw_context.mli
 raw_level_repr.ml
 receipt_repr.ml
-saturation_repr.ml
 services.ml
 services_registration.ml
 storage_costs.ml
@@ -184,8 +171,6 @@ apply_results.ml
 block_header_repr.ml
 cache_repr.ml
 constants_repr.ml
-error.ml
-error.mli
 fitness_repr.ml
 gas_limit_repr.ml
 header_storage.ml
@@ -204,7 +189,6 @@ raw_context.ml
 raw_context.mli
 raw_level_repr.ml
 receipt_repr.ml
-saturation_repr.ml
 services.ml
 services_registration.ml
 storage_costs.ml
@@ -247,8 +231,6 @@ apply_results.ml
 block_header_repr.ml
 cache_repr.ml
 constants_repr.ml
-error.ml
-error.mli
 fitness_repr.ml
 gas_limit_repr.ml
 header_storage.ml
@@ -267,7 +249,6 @@ raw_context.ml
 raw_context.mli
 raw_level_repr.ml
 receipt_repr.ml
-saturation_repr.ml
 services.ml
 services_registration.ml
 storage_costs.ml

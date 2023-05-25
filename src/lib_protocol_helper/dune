@@ -1,10 +1,49 @@
+(library
+ (name custom_helper_env)
+ (public_name custom-protocol-helper.environment)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-protocol-environment)
+ (library_flags (:standard -linkall))
+ (modules Helper_env))
+
+
+(rule
+  (targets  helper_env.ml)
+  (action
+    (write-file
+      %{targets}
+      "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
+
+
+
 (library 
   (name custom_protocol_helper)
+
   (public_name custom-protocol-helper)
   (preprocess (pps ppx_deriving_encoding))
   (libraries 
     ppx_deriving_encoding
     tezos-protocol-environment
     tezos-base
+    custom-protocol-helper.environment
    )
-  )
+ (library_flags (:standard -linkall))
+ (flags
+  (:standard)
+  -nopervasives
+  -open Custom_helper_env)
+ (modules
+   Header_make
+   Helper
+   Proto_make
+   )
+)
+
+
+(rule
+  (targets custom_protocol_helper.ml)
+  (action
+    (write-file
+      %{targets}
+      "include Custom_helper_env.Helper_env\n")))

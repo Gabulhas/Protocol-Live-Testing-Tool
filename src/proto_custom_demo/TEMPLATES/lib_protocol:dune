@@ -6,6 +6,7 @@
  (public_name tezos-protocol-custom-demo.environment)
  (instrumentation (backend bisect_ppx))
  (libraries
+  custom-protocol-helper
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
  (modules Tezos_protocol_environment_custom_demo))
@@ -17,13 +18,6 @@
    %{targets}
    "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
 
-(rule
- (targets header_make_gen.ml)
- (deps (:input ../../lib_protocol_helper/header_make.ml))
- (action
-  (write-file
-   %{targets}
-   "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
 
 (library
  (name tezos_raw_protocol_custom_demo)
@@ -42,7 +36,6 @@
   -open Tezos_protocol_environment_custom_demo.Error_monad)
  (preprocess (pps ppx_deriving_encoding))
  (modules
-   Header_make_gen
    TEMPLATE_MODULES_PART
   ))
 
