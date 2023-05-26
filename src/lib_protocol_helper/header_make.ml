@@ -1,12 +1,3 @@
-(*
-TODO:
-    Remove this and make it so the protocol decides the environment
- *)
-
-(*
-End of Dummy Stuff
- *)
-
 module MakeHeader (Content : sig
   type t
 

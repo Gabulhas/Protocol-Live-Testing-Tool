@@ -1,0 +1,7 @@
+(library
+  (name custom_helper_reprs)
+  (public_name custom-protocol-helper.reprs)
+  (libraries
+   tezos-protocol-environment)
+  (library_flags (:standard -linkall))
+ )

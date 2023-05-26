@@ -5,9 +5,7 @@
  (libraries
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
- (modules Custom_helper_env
-
-          ))
+ (modules Custom_helper_env))
 
 
 (rule
@@ -28,23 +26,23 @@
     tezos-protocol-environment
     tezos-base
     custom-protocol-helper.environment
+    custom-protocol-helper.reprs
    )
  (library_flags (:standard -linkall))
  (flags
   (:standard)
   -open Custom_helper_env
+  -open Custom_helper_reprs
   )
  (modules
    Header_make
    Helper
    Proto_make
+   Custom_helper_reprs
    )
 )
 
 
-(rule
-  (targets custom_protocol_helper.ml)
-  (action
-    (write-file
-      %{targets}
-      "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
+
+
+
