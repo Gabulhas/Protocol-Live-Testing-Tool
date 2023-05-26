@@ -51,6 +51,10 @@ Há um número de bibliotecas/libs/modules que são iguais a todos os protocolos
    - storage_functors.mli
    - storage_sigs.ml
 
+   - account_repr.ml
+   - manager_repr.ml
+   - tez_repr.ml
+
 Há um número de .... que estão incluídos em vários protocolos mas que diferem entre si
 Ou seja, nestes está definida a lógica do consenso
 
@@ -70,6 +74,7 @@ Ou seja, nestes está definida a lógica do consenso
 
 Os TEMPLATES também são iguais a todos os protocolos
 (também temos de ver uma forma de generalizar os environments)
+
 
 
 It seems like you have done quite a lot of work already. The "protocol_helper" library and the functor that returns the block header module sound like good steps towards your goal of facilitating the development, testing, and comparison of consensus protocols.
