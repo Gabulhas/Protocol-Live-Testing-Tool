@@ -7,9 +7,10 @@ let start_bakery (cctxt : Protocol_client_context.full) account to_mine () =
     {operation_pool; canceler; lock}
   in
   let monitoring_state = create_operation_monitoring_state () in
-  cctxt#message "Bakery started! Mining %s blocks" (Int32.to_string to_mine) >>= fun () ->
+  cctxt#message "Bakery started! Mining %s blocks" (Int32.to_string to_mine)
+  >>= fun () ->
   Lwt.async (fun () ->
       Operation_handler.operation_worker cctxt monitoring_state) ;
   Mining.mine_worker cctxt monitoring_state account to_mine ()
 
-let baking_schedule = start_bakery 
+let baking_schedule = start_bakery

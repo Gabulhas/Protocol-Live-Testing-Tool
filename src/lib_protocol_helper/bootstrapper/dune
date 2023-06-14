@@ -1,0 +1,18 @@
+(executable
+ (name bootstrapper)
+ (public_name bootstrapper)
+ (libraries 
+  tezos-protocol-environment
+  tezos-base
+  custom-protocol-helper.environment
+ )
+ (preprocess (pps ppx_deriving_encoding))
+ (flags
+  (:standard)
+  (:include %{workspace_root}/static-link-flags.sexp)
+  -open Custom_helper_env
+  -open Custom_helper_env.Pervasives
+  -open Custom_helper_env.Error_monad)
+  (package custom-protocol-helper)
+
+)

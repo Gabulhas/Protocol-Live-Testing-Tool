@@ -36,6 +36,7 @@ VALID_PROFILES=dev release static
 OCTEZ_BIN=octez-node octez-validator octez-client octez-admin-client \
     octez-signer octez-codec octez-protocol-compiler octez-snoop octez-proxy-server \
 	octez-baker-custom-demo \
+	bootstrapper \
     $(foreach p, $(active_protocol_versions_without_number), octez-baker-$(p)) \
     $(foreach p, $(active_protocol_versions_without_number), octez-accuser-$(p)) \
     $(foreach p, $(active_protocol_versions_without_number), octez-tx-rollup-node-$(p)) \

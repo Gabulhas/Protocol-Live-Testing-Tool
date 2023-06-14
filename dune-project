@@ -226,5 +226,6 @@
 (package (name tezt-self-tests))
 (package (name tezt-tezos))
 (package (name custom-protocol-helper))
+(package (name custom-protocol-helper.bootstrapper))
 ; This file was automatically generated, do not edit.
 ; Edit file manifest/main.ml instead.

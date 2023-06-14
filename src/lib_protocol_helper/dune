@@ -26,23 +26,14 @@
     tezos-protocol-environment
     tezos-base
     custom-protocol-helper.environment
-    custom-protocol-helper.reprs
    )
  (library_flags (:standard -linkall))
  (flags
   (:standard)
   -open Custom_helper_env
-  -open Custom_helper_reprs
-  )
+  -open Custom_helper_env.Pervasives
+  -open Custom_helper_env.Error_monad)
  (modules
-   Header_make
-   Helper
-   Proto_make
-   Custom_helper_reprs
+  Header_make
    )
 )
-
-
-
-
-
