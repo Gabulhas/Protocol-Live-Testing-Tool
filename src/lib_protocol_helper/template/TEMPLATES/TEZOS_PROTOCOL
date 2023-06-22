@@ -1,6 +1,6 @@
 {
     "expected_env_version": $VERSION$,
-    "hash": "PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn",
+    "hash": "$PROTOCOL_HASH$",
     "modules": 
         [
          TEMPLATE_MODULES_PART_QUOTED
