@@ -1,3 +1,7 @@
+open Tezos_crypto
+
+let _template_hash = "PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn"
+
 let template_dir = "src/lib_protocol_helper/template/"
 
 let lib_protocol_suffix = "lib_protocol"
@@ -5,6 +9,8 @@ let lib_protocol_suffix = "lib_protocol"
 let templates_suffix = "TEMPLATES"
 
 let copy_folder src dst =
+  Printf.printf "Copying %s to %s?" src dst ;
+
   let src_dir = src in
   let dst_dir = dst in
 
@@ -40,7 +46,7 @@ let copy_folder src dst =
           close_out oc))
     files
 
-let replace_in_file filename template replacement =
+let _replace_in_file filename template replacement =
   let ic = open_in filename in
   let oc = open_out (filename ^ ".tmp") in
   try
@@ -56,7 +62,8 @@ let replace_in_file filename template replacement =
     close_out oc ;
     Sys.rename (filename ^ ".tmp") filename
 
-let copy_and_replace src_file dst_file template replacement =
+(*
+let _copy_and_replace src_file dst_file template replacement =
   let ic = open_in src_file in
   let oc = open_out dst_file in
   try
@@ -70,6 +77,19 @@ let copy_and_replace src_file dst_file template replacement =
   with End_of_file ->
     close_in ic ;
     close_out oc
+*)
+
+let is_valid_name (name : string) =
+  let name_len = String.length name in
+
+  let rec is_valid_name_aux i =
+    if i == name_len then true
+    else
+      match name.[i] with
+      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> is_valid_name_aux (succ i)
+      | _ -> false
+  in
+  is_valid_name_aux 0
 
 let parse_args () =
   let protocol_name = ref "" in
@@ -79,9 +99,17 @@ let parse_args () =
   let specs =
     [
       ( "-name",
-        Arg.Set_string protocol_name,
+        Arg.String
+          (fun s ->
+            if is_valid_name s && s != "" then protocol_name := s
+            else raise (Failure "Invalid protocol name.")),
         "Protocol name. Should only contain letters, numbers or underscore." );
-      ("-env", Arg.Set_int protocol_env_version, "Protocol environment version");
+      ( "-env",
+        Arg.Int
+          (fun s ->
+            if s < 1 && s > 9 then raise (Failure "Invalid Protocol version")
+            else protocol_env_version := s),
+        "Protocol environment version" );
       ( "-use-lib-protocol-template",
         Arg.Set use_lib_protocol_template,
         "Use lib_protocol template" );
@@ -91,39 +119,32 @@ let parse_args () =
     ]
   in
   Arg.parse specs (fun _ -> ()) "Usage: bootstrapper [options]" ;
+
   ( !protocol_name,
     !protocol_env_version,
     !use_lib_protocol_template,
     !use_lib_client_template )
 
-let is_valid_name (name : string) =
-  let name_len = String.length name in
-
-  let rec is_valid_name_aux i =
-    if i == name_len then true
-    else
-      match name.[i] with
-      | 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' -> is_valid_name_aux (succ i)
-      | _ -> false
-  in
-  is_valid_name_aux 0
+let generate_protocol_hash name = Protocol_hash.hash_string [name]
 
 let () =
   let ( protocol_name,
-        protocol_env_version,
-        use_lib_protocol_template,
-        use_lib_client_template ) =
+        _protocol_env_version,
+        _use_lib_protocol_template,
+        _use_lib_client_template ) =
     parse_args ()
   in
 
-  if not (is_valid_name protocol_name) then
-    Failure
-      (Printf.sprintf
-         "%s is not a valid name. It Should only contain letters, numbers or \
-          underscore."
-         protocol_name)
-    |> raise ;
+  let protocol_name_dir = "src/proto_" ^ protocol_name ^ "/" in
 
-  let protocol_name_dir = "src/proto_" ^ protocol_name in
+  Printf.printf
+    "Protocol hash %s"
+    (protocol_name |> generate_protocol_hash |> Protocol_hash.to_string) ;
 
-  if true then Failure "NOT IMPLEMENTED YET" |> raise
+  copy_folder template_dir protocol_name_dir ;
+  copy_folder
+    (template_dir ^ lib_protocol_suffix)
+    (protocol_name_dir ^ lib_protocol_suffix) ;
+  copy_folder
+    (template_dir ^ templates_suffix)
+    (protocol_name_dir ^ templates_suffix)

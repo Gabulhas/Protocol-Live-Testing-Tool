@@ -2,6 +2,9 @@
  (name bootstrapper)
  (public_name bootstrapper)
  (preprocess (pps ppx_deriving_encoding))
+ (libraries 
+   str 
+   tezos_crypto) 
  (flags
   (:standard)
   (:include %{workspace_root}/static-link-flags.sexp)
