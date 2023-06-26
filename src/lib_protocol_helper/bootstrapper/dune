@@ -11,4 +11,5 @@
   )
   (package custom-protocol-helper)
 
+  (modules bootstrapper file_utils pipeline environment_gen)
 )

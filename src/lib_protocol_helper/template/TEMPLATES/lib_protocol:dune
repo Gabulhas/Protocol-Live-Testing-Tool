@@ -2,58 +2,58 @@
 ; Edit file manifest/main.ml instead.
 
 (library
- (name tezos_protocol_environment_custom_demo)
- (public_name tezos-protocol-custom-demo.environment)
+ (name tezos_protocol_environment_$PROTOCOL_NAME$)
+ (public_name tezos-protocol-$PROTOCOL-NAME$.environment)
  (instrumentation (backend bisect_ppx))
  (libraries
   custom-protocol-helper
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
- (modules Tezos_protocol_environment_custom_demo))
+ (modules Tezos_protocol_environment_$PROTOCOL_NAME$))
 
 (rule
- (targets tezos_protocol_environment_custom_demo.ml)
+ (targets tezos_protocol_environment_$PROTOCOL_NAME$.ml)
  (action
   (write-file
    %{targets}
-   "module Name = struct let name = \"custom-demo\" end\ninclude Tezos_protocol_environment.V$VERSION$.Make(Name)()\n")))
+   "module Name = struct let name = \"$PROTOCOL-NAME$\" end\ninclude Tezos_protocol_environment.V$VERSION$.Make(Name)()\n")))
 
 
 (library
- (name tezos_raw_protocol_custom_demo)
- (public_name tezos-protocol-custom-demo.raw)
+ (name tezos_raw_protocol_$PROTOCOL_NAME$)
+ (public_name tezos-protocol-$PROTOCOL-NAME$.raw)
  (instrumentation (backend bisect_ppx))
  (libraries
   ppx_deriving_encoding
-  tezos-protocol-custom-demo.environment)
+  tezos-protocol-$PROTOCOL-NAME$.environment)
  (library_flags (:standard -linkall))
  (flags
   (:standard)
   -nostdlib
   -nopervasives
-  -open Tezos_protocol_environment_custom_demo
-  -open Tezos_protocol_environment_custom_demo.Pervasives
-  -open Tezos_protocol_environment_custom_demo.Error_monad)
+  -open Tezos_protocol_environment_$PROTOCOL_NAME$
+  -open Tezos_protocol_environment_$PROTOCOL_NAME$.Pervasives
+  -open Tezos_protocol_environment_$PROTOCOL_NAME$.Error_monad)
  (preprocess (pps ppx_deriving_encoding))
  (modules
    TEMPLATE_MODULES_PART
   ))
 
 (library
- (name tezos_protocol_custom_demo)
- (public_name tezos-protocol-custom-demo)
+ (name tezos_protocol_$PROTOCOL_NAME$)
+ (public_name tezos-protocol-$PROTOCOL-NAME$)
  (instrumentation (backend bisect_ppx))
  (libraries
   tezos-protocol-environment
   tezos-protocol-environment.sigs
-  tezos-protocol-custom-demo.raw)
+  tezos-protocol-$PROTOCOL-NAME$.raw)
  (flags
   (:standard)
   -nopervasives)
- (modules Protocol Tezos_protocol_custom_demo))
+ (modules Protocol Tezos_protocol_$PROTOCOL_NAME$))
 
 (install
- (package tezos-protocol-custom-demo)
+ (package tezos-protocol-$PROTOCOL-NAME$)
  (section lib)
  (files (TEZOS_PROTOCOL as raw/TEZOS_PROTOCOL)))
 
@@ -62,14 +62,14 @@
  (action
   (write-file
    %{targets}
-   "\nlet hash = Tezos_crypto.Protocol_hash.of_b58check_exn \"$PROTOCOL_HASH$\"\nlet name = Tezos_protocol_environment_custom_demo.Name.name\ninclude Tezos_raw_protocol_custom_demo\ninclude Tezos_raw_protocol_custom_demo.Main\n")))
+   "\nlet hash = Tezos_crypto.Protocol_hash.of_b58check_exn \"$PROTOCOL_HASH$\"\nlet name = Tezos_protocol_environment_$PROTOCOL_NAME$.Name.name\ninclude Tezos_raw_protocol_$PROTOCOL_NAME$\ninclude Tezos_raw_protocol_$PROTOCOL_NAME$.Main\n")))
 
 (rule
- (targets tezos_protocol_custom_demo.ml)
+ (targets tezos_protocol_$PROTOCOL_NAME$.ml)
  (action
   (write-file
    %{targets}
-   "\nmodule Environment = Tezos_protocol_environment_custom_demo\nmodule Protocol = Protocol\n")))
+   "\nmodule Environment = Tezos_protocol_environment_$PROTOCOL_NAME$\nmodule Protocol = Protocol\n")))
 
 (rule
  (alias runtest_compile_protocol)
@@ -79,7 +79,7 @@
  (action (run %{bin:octez-protocol-compiler} -no-hash-check -warn-error +a .)))
 
 (library
- (name tezos_protocol_custom_demo_functor)
+ (name tezos_protocol_$PROTOCOL_NAME$_functor)
  (libraries
   tezos-protocol-environment
   tezos-protocol-environment.sigs)
@@ -101,11 +101,11 @@
     (run %{bin:octez-protocol-compiler.octez-protocol-packer} %{src_dir})))))
 
 (library
- (name tezos_embedded_protocol_custom_demo)
- (public_name tezos-embedded-protocol-custom-demo)
+ (name tezos_embedded_protocol_$PROTOCOL_NAME$)
+ (public_name tezos-embedded-protocol-$PROTOCOL-NAME$)
  (instrumentation (backend bisect_ppx))
  (libraries
-  tezos-protocol-custom-demo
+  tezos-protocol-$PROTOCOL-NAME$
   tezos-protocol-updater
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
@@ -121,7 +121,7 @@
    %{targets}
    (chdir
     %{workspace_root}
-    (run %{bin:octez-embedded-protocol-packer} %{src_dir} custom_demo)))))
+    (run %{bin:octez-embedded-protocol-packer} %{src_dir} $PROTOCOL_NAME$)))))
 
 
 (env (_ 
