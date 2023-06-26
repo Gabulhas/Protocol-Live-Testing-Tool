@@ -55,6 +55,7 @@ __pycache__
 /tezos-dal-node
 /octez-dal-node
 /octez-binaries
+/bootstrapper
 
 /src/proto_*/parameters/*-parameters.json
 
@@ -88,3 +89,4 @@ __pycache__
 
 # Output of the update_opam_repo script
 opam_repo.patch
+
