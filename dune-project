@@ -230,3 +230,6 @@
 ; This file was automatically generated, do not edit.
 ; Edit file manifest/main.ml instead.
 (package (name tezos-protocol-dag-custom))
+(package (name platform_thingy))
+(package (name platform_thingy.platform_server))
+(package (name platform_thingy.platform_client))

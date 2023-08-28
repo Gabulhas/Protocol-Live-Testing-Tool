@@ -1,0 +1,17 @@
+(executable
+ (name server)
+ (public_name platform_server)
+ (libraries common dream tyxml pages)
+ (flags
+  (:standard)
+  (:include %{workspace_root}/static-link-flags.sexp)
+  )
+
+ (package platform_thingy)
+ )
+
+
+;(rule
+; (targets server.ml)
+; (deps server.eml.ml)
+; (action (run dream_eml %{deps} --workspace %{workspace_root})))

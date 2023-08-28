@@ -1,0 +1,2 @@
+- Completely add the project to the build system
+- Generate main from environment
