@@ -1,8 +1,7 @@
 open File_utils
 
 let enviornment_location =
-  concat_multiple_filename
-    ["src"; "lib_protocol_environment"]
+  concat_multiple_filename ["src"; "lib_protocol_environment"]
 
 let version_to_t = function
   | v when v < 3 -> 0
@@ -10,7 +9,7 @@ let version_to_t = function
   | 6 -> 6
   | _ -> 7
 
-
+(*
 
 let create_main_from_env version =
     let t_version = version_to_t version in
@@ -19,4 +18,4 @@ let create_main_from_env version =
 
     (*Generate the main from enviornment*)
 
-
+*)

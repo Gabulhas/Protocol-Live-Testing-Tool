@@ -39,7 +39,9 @@ let pipeline
 
   append_to_file
     "dune-project"
-    (Printf.sprintf "(package (name tezos-protocol-%s))" protocol_name_dash) ;
+    (Printf.sprintf
+       "(package (name tezos-protocol-%s));; ADDED BY BOOTSTRAPPER"
+       protocol_name_dash) ;
 
   Filename.concat protocol_name_dir templates_suffix
   |> Sys.readdir

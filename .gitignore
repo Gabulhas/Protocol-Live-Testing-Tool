@@ -55,7 +55,8 @@ __pycache__
 /tezos-dal-node
 /octez-dal-node
 /octez-binaries
-/protocol_bootstrapper
+/bootstrapper 
+/platform_server
 
 
 /src/proto_*/parameters/*-parameters.json
