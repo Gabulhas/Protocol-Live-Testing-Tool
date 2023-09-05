@@ -3,6 +3,12 @@ open Tyxml.Html
 let main_script =
   script ~a:[a_src (Xml.uri_of_string "/static/client.bc.js")] (txt "")
 
+let htmx_import =
+  (*<script src="https://unpkg.com/htmx.org@1.9.5" integrity="sha384-xcuj3WpfgjlKF+FXhSQFQ0ZNr39ln+hwjN3npfM9VBnUskLolQAcN80McRIVOPuO" crossorigin="anonymous"></script>*)
+  script
+    ~a:[a_src (Xml.uri_of_string "https://unpkg.com/htmx.org@1.9.5")]
+    (txt "")
+
 let icons_script =
   script
     ~a:[a_src (Xml.uri_of_string "https://unpkg.com/feather-icons")]
@@ -57,4 +63,11 @@ let base_template title_text content =
   html
     (head title [main_css_framework])
     (body
-       [icons_script; main_navbar; content; main_script; icons_script_replace])
+       [
+         icons_script;
+         htmx_import;
+         main_navbar;
+         content;
+         main_script;
+         icons_script_replace;
+       ])

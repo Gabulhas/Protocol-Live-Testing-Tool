@@ -1,0 +1,15 @@
+# This file was automatically generated, do not edit.
+# Edit file manifest/main.ml instead.
+opam-version: "2.0"
+maintainer: "guilherme lopes <gabulhas@users.noreply.github.com>"
+authors: "guilherme lopes <gabulhas@users.noreply.github.com>"
+license: "MIT"
+depends: [
+  "dune" { >= "3.0" }
+  "tezos-stdlib"
+]
+build: [
+  ["rm" "-r" "vendors"]
+  ["dune" "build" "-p" name "-j" jobs]
+]
+synopsis: "Beans"

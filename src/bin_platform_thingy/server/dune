@@ -5,6 +5,7 @@
             dream 
             tyxml 
             pages 
+            protocol_detection
             )
  (preprocess (pps lwt_ppx))
  (flags

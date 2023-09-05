@@ -8,7 +8,6 @@ Remember, the point is to test in a real way, not just "swapping"
 - Enable protocol selection and customization in the interface.
      - Design a page for protocol selection.
      - Design a page for parameter selection.
-
 - Implement transactions for testing purposes.
     - Standardize transaction interface across protocols.
     - Create "workers" (to fake users) that create transactions at random (to simulate the transactions) as well as accept some sort of "command executer" (that, for example, enables the creation of miners)
@@ -24,6 +23,7 @@ Remember, the point is to test in a real way, not just "swapping"
      - Nodes that fail.
      - Independent protocol-specific statistics.
     - Implement storage for mapping combinations to statistics.
+- Automatically generate info about the protocol, like the parameters 
 
  
 # Easy Protocol Swapping
@@ -49,15 +49,7 @@ Remember, the point is to test in a real way, not just "swapping"
    - `services_registration.ml`.
    - `storage.ml`.
 
-# To-Do List
-
-   - Implement a testing framework:
-   - Stress tests, unit tests, integration tests.
-   - Develop a benchmarking suite:
-   - Measure transaction throughput, latency, resource usage.
-   - Define a standardized interface for protocols.
-   - Create protocol templates (PoW, PoS, BFT).
-   - Document your work and provide tutorials.
-   - Implement automated build and testing (CI/CD).
-   - Consider visualization tools for protocol behavior.
+# Other Ideas
+Data Persistence: How will you log or archive test data for later analysis?
+API: For external tools to interact with your testing platform, also, so you can code scripts in like python or go to perform more tests (like, running a network for X seconds, retrieve information from each node or from the platform kind of thing)
 

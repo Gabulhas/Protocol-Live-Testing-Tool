@@ -1,0 +1,5 @@
+(library  
+  (name protocol_detection)
+  (library_flags (:standard -linkall))
+  (libraries data-encoding)
+  )

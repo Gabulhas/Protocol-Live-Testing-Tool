@@ -79,6 +79,8 @@ Utils
  (name tezos_protocol_custom_demo)
  (public_name tezos-protocol-custom-demo)
  (instrumentation (backend bisect_ppx))
+
+ (library_flags (:standard -linkall))
  (libraries
   tezos-protocol-environment
   tezos-protocol-environment.sigs

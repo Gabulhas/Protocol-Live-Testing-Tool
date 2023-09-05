@@ -1,0 +1,6 @@
+(library
+ (name communications)
+ (public_name platform_thingy.communications)
+ (libraries common tyxml dream)
+ (library_flags (:standard -linkall))
+ )

@@ -37,7 +37,7 @@ do
     node_response=$(curl -s "http://localhost:18731/chains/main/blocks/head")
 done
 
-tmux new-window -t $SESSION:8 -n "CLIENT" -d "eval \`./src/bin_client/octez-init-sandboxed-client.sh 1\` ; octez-client activate protocol PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn with fitness 0 and key activator and parameters src/proto_custom_demo/test_stuff/parameters.json ; octez_client reveal $MININGKEY ; octez_client reveal $OTHERKEY; clear ; printf 'REVALED KEY A (MININGKEY): $MININGKEY | REVEALED KEY B (OTHERKEY): $OTHERKEY\n\n'; export MININGKEY=$MININGKEY ; export OTHERKEY=$OTHERKEY ; export stop='$KILLCOMMAND' ; bash"
+tmux new-window -t $SESSION:8 -n "CLIENT" -d "eval \`./src/bin_client/octez-init-sandboxed-client.sh 1\` ; octez-client activate protocol PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn with fitness 0 and key activator and parameters src/proto_custom_demo/protocol_info/parameters.json ; octez_client reveal $MININGKEY ; octez_client reveal $OTHERKEY; clear ; printf 'REVALED KEY A (MININGKEY): $MININGKEY | REVEALED KEY B (OTHERKEY): $OTHERKEY\n\n'; export MININGKEY=$MININGKEY ; export OTHERKEY=$OTHERKEY ; export stop='$KILLCOMMAND' ; bash"
 
 sleep 2
 

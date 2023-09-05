@@ -225,11 +225,11 @@
 (package (name tezt-performance-regression))
 (package (name tezt-self-tests))
 (package (name tezt-tezos))
-(package (name custom-protocol-helper))
-(package (name custom-protocol-helper.bootstrapper))
 ; This file was automatically generated, do not edit.
 ; Edit file manifest/main.ml instead.
-(package (name tezos-protocol-dag-custom))
+(package (name custom-protocol-helper))
+(package (name custom-protocol-helper.bootstrapper) (allow_empty) )
 (package (name platform_thingy))
-(package (name platform_thingy.platform_server))
-(package (name platform_thingy.platform_client))
+(package (name platform_thingy.platform_server) (allow_empty) )
+(package (name platform_thingy.platform_client) (allow_empty) )
+(package (name platform_thingy.communications) (allow_empty) )
