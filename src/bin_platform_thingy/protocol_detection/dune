@@ -1,5 +1,10 @@
 (library  
   (name protocol_detection)
-  (library_flags (:standard -linkall))
-  (libraries data-encoding)
+  (flags (:standard -linkall))
+  (libraries 
+    data-encoding
+    ppx_deriving_encoding
+    ppx_deriving
   )
+  (preprocess (pps ppx_deriving_encoding ppx_deriving.show))
+)

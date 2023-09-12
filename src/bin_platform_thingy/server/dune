@@ -6,8 +6,15 @@
             tyxml 
             pages 
             protocol_detection
+            ppx_deriving_encoding
+            ppx_deriving
+
+            cohttp
+           cohttp-lwt-unix
+            lwt
             )
- (preprocess (pps lwt_ppx))
+ (preprocess (pps lwt_ppx ppx_deriving_encoding ppx_deriving.show))
+
  (flags
   (:standard)
   (:include %{workspace_root}/static-link-flags.sexp)

@@ -1,56 +1,77 @@
-open Format
-open Protocol_detection.Detect_available_protocols
-open Protocol_detection.Load_protocol_information
-open Tyxml.Html
-open Pages.Home
-
-let html_to_string = asprintf "%a@." (pp ~indent:true ())
-
-let element_to_string = Format.asprintf "%a" (Tyxml.Html.pp_elt ())
-
-let home_routes =
+let metric_routes =
   [
-    Dream.get "/" (fun _ -> Dream.html @@ html_to_string @@ home protocol_names);
-    Dream.get "/wizard/render_command_inputs" (fun request ->
-        match Dream.query request "number_of_clients" with
-        | None -> Dream.html (element_to_string (h1 [txt "Error"]))
-        | Some n ->
-            let number = int_of_string n in
-            Dream.html (element_to_string (render_inputs_for_clients number)));
-    Dream.get "/wizard/parameters" (fun request ->
-        match Dream.query request "protocol" with
-        | None -> Dream.html (element_to_string (h1 [txt "Error"]))
-        | Some protocol ->
-            let parameters_string =
-              match get_protocol_folder_by_name protocol with
-              | None ->
-                  Printf.sprintf
-                    "No mockup parameters found. Make sure you have an example \
-                     'parameters.json' file inside 'protocol_information' \
-                     directory. (%s) (%s) (%s)"
-                    (protocol_info_path protocol)
-                    protocol
-                    (String.concat ";"
-                    @@ List.map
-                         (fun (name, folder) ->
-                           Printf.sprintf "'%s' -> '%s'" name folder)
-                         protocol_folders_and_names)
-              | Some folder -> get_mockup_parameters folder
-            in
-
-            Dream.html (element_to_string (parameters_area parameters_string)));
+    Dream.get "/throughput" (fun _ -> Dream.html "")
+    (* Measures transactions per second.*);
+    Dream.get "/latency-stats" (fun _ -> Dream.html "")
+    (* Average, min, max latencies.*);
+    Dream.get "/consensus-rate" (fun _ -> Dream.html "")
+    (* Speed of reaching consensus.*);
+    Dream.get "/error-rate" (fun _ -> Dream.html "")
+    (* Rate of failed transactions or consensus failures.*);
+    Dream.get "/node-uptime" (fun _ -> Dream.html "")
+    (* Uptime stats for each node.*);
+    Dream.get "/resource-usage" (fun _ -> Dream.html "")
+    (* CPU, memory, network I/O per node.*);
+    Dream.get "/block-size" (fun _ -> Dream.html "")
+    (* Average, min, max block sizes.*);
+    Dream.get "/tx-pool" (fun _ -> Dream.html "")
+    (* Current size and rate of the transaction pool.*);
+    Dream.get "/fork-rate" (fun _ -> Dream.html "")
+    (* Frequency of forks in the blockchain.*);
+    Dream.get "/validator-stats" (fun _ -> Dream.html "")
+    (* Performance metrics specific to validators.*);
   ]
 
-let common_routes =
+let other_routes =
   [
-    Dream.get "/protocol_names" (fun _ ->
-        let list_json = "[" ^ String.concat "," protocol_names ^ "]" in
-        Dream.json list_json);
-    Dream.get
-      "/static/**"
-      (Dream.static "./_build/default/src/bin_platform_thingy/client");
+    Dream.post "/inject-failure" (fun _ -> Dream.html "")
+    (* Introduce controlled failures to test resilience.*);
+    Dream.post "/scale" (fun _ -> Dream.html "")
+    (* Dynamically adds/removes nodes or clients.*);
+    Dream.post "/pause-resume" (fun _ -> Dream.html "")
+    (* Pauses and resumes node or client activities.*);
+    Dream.post "/latency" (fun _ -> Dream.html "")
+    (* Simulates network latency between nodes.*);
+    Dream.post "/partition" (fun _ -> Dream.html "")
+    (* Emulates network partitions for split-brain tests.*);
+    Dream.get "/metrics" (fun _ -> Dream.html "")
+    (* Custom metrics (e.g., transaction rate, block time).*);
+    Dream.post "/snapshot" (fun _ -> Dream.html "")
+    (* Takes a snapshot of current state for later analysis.*);
+    Dream.post "/replay" (fun _ -> Dream.html "")
+    (* Replays events from a snapshot or log.*);
+    Dream.post "/trigger-event" (fun _ -> Dream.html "")
+    (* Custom events like smart contract deployments.*);
+    Dream.get "/queries" (fun _ -> Dream.html "")
+    (* Complex queries on the blockchain state.*);
+    Dream.post "/batch-commands" (fun _ -> Dream.html "")
+    (* Executes a batch of commands across nodes or clients.*);
+    Dream.get "/logs" (fun _ -> Dream.html "")
+    (* Fetch real-time or historical logs for debugging.*);
   ]
 
-let all_routes = home_routes @ common_routes
+let main_routes =
+  let open Test_handler in
+  [
+    Dream.get "/status" (fun _ -> status_handler ())
+    (* Retrieves the health and statistics of each node and client.*);
+    Dream.post "/start-test" start_test_handler;
+    (* Accepts parameters like protocol type, number of nodes, clients, and their configurations.*)
+    Dream.post "/stop-test" start_test_handler;
+    (* Stops test started with /start-test.*)
+    Dream.get "/protocol_parameters/:name" (fun request ->
+        Dream.param request "name" |> protocol_parameters_handler);
+    (* Get the mockup parameters from the protocol_folder.*)
+    Dream.get "/available-protocols" (fun _ -> available_protocols ());
+    (* Returns the name, hash and path of available protocols *)
+    Dream.post "/swap-protocol" (fun _ -> Dream.html "");
+    (* Changes the consensus protocol on-the-fly without restarting nodes.*)
+    Dream.post "/stop_node/:id" (fun request ->
+        Dream.param request "id" |> int_of_string |> stop_node);
+    (*Stops a specific node*)
+    Dream.get "/nodes" (fun _ -> nodes_handler ()) (*Gets info about the nodes*);
+  ]
 
-let () = Dream.run @@ Dream.logger @@ Dream.router all_routes
+let () =
+  Dream.run @@ Dream.logger
+  @@ Dream.router (main_routes @ other_routes @ metric_routes)

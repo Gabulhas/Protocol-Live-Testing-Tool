@@ -1,31 +1,35 @@
-let prefix = "proto_custom"
+type protocol_info = {
+  protocol_name : string;
+  protocol_folder : string;
+  protocol_hash : string;
+}
+[@@deriving encoding, show]
+
+let prefix = "proto_custom_"
 
 let prefix_len = String.length prefix
 
 let protocol_folder_to_name dir =
-  let beautify_name name =
-    name |> String.split_on_char '_'
-    |> List.map String.capitalize_ascii
-    |> String.concat " " |> String.trim
-  in
-  String.sub dir prefix_len (String.length dir - prefix_len) |> beautify_name
+  String.sub dir prefix_len (String.length dir - prefix_len)
 
-let protocol_folders_and_names =
+let protocol_infos =
   let folder = "src" in
   if Sys.is_directory folder then
     Sys.readdir folder |> Array.to_list
     |> List.filter (fun dir -> String.starts_with ~prefix dir)
     |> List.map (fun folder_name ->
-           ( protocol_folder_to_name folder_name,
-             Filename.concat folder folder_name ))
+           let protocol_name = protocol_folder_to_name folder_name in
+           let protocol_folder = Filename.concat folder folder_name in
+           let protocol_hash =
+             (Load_protocol_information.protocol_TEZOS_PROTOCOL protocol_folder)
+               .hash
+           in
+           {protocol_name; protocol_folder; protocol_hash})
   else []
 
-let protocol_folders =
-  List.map (fun (_, folder) -> folder) protocol_folders_and_names
+let protocol_info_by_name name =
+  List.find (fun {protocol_name; _} -> name = protocol_name) protocol_infos
 
-let protocol_names = List.map (fun (name, _) -> name) protocol_folders_and_names
-
-let get_protocol_folder_by_name name =
-  match List.find_opt (fun (n, _) -> name = n) protocol_folders_and_names with
-  | Some (_, f) -> Some f
-  | _ -> None
+let protocol_mockup_parameters name =
+  let info = protocol_info_by_name name in
+  Load_protocol_information.get_mockup_parameters info.protocol_folder

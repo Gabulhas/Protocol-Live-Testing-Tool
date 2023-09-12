@@ -3,3 +3,5 @@
   (public_name platform_thingy)
   (library_flags (:standard -linkall))
   )
+
+

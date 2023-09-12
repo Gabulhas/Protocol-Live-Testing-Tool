@@ -232,4 +232,3 @@
 (package (name platform_thingy))
 (package (name platform_thingy.platform_server) (allow_empty) )
 (package (name platform_thingy.platform_client) (allow_empty) )
-(package (name platform_thingy.communications) (allow_empty) )
