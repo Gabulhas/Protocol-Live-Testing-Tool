@@ -1,37 +1,6 @@
 open Lwt.Infix
 open Utils
-
-type startTest = {
-  protocol_name : string;
-  n_nodes : int32;
-  fitness : int32;
-  parameters : Data_encoding.Json.t;
-}
-[@@deriving encoding, show]
-
-type nodeInfo = {
-  id : int;
-  process : Lwt_process.process;
-  net_port : int;
-  rpc_port : int;
-  node_dir : string;
-}
-
-type nodeInfoResponse = {
-  node_id : int32;
-  pid : int32;
-  port : int32;
-  rpc : int32;
-  dir : string;
-}
-[@@deriving encoding, show]
-
-type statusResponse = {
-  current_protocol : string;
-  running : bool;
-  nodes : nodeInfoResponse list;
-}
-[@@deriving encoding, show]
+open Responses_and_types
 
 let alive_nodes : (int, nodeInfo) Hashtbl.t = Hashtbl.create 10
 
@@ -39,7 +8,7 @@ let program_start_time = Unix.gmtime (Unix.time ())
 
 let current_protocol = ref ""
 
-let running = ref false
+let current_status = ref Stopped
 
 let start_node node_number =
   let%lwt process =
@@ -61,10 +30,12 @@ let boot_up_nodes amount =
 let boot_up_nodes n_nodes =
   let base_port = 18000 in
   let base_rpc = 19000 in
+  let base_metrics = 17000 in
   let octez_node = "./octez-node" in
   let rec aux_ids_and_ports n =
     if n >= 0 then
-      (n, base_port + n, base_rpc + n) :: aux_ids_and_ports (pred n)
+      (n, base_port + n, base_rpc + n, base_metrics + n)
+      :: aux_ids_and_ports (pred n)
     else []
   in
 
@@ -72,14 +43,14 @@ let boot_up_nodes n_nodes =
   let peers_thing =
     "--no-bootstrap-peers"
     ^ List.fold_left
-        (fun res (_, port, _) ->
+        (fun res (_, port, _, _) ->
           res ^ " --peer 127.0.0.1:" ^ string_of_int port ^ " ")
         ""
         ids_and_ports
     ^ "--private-mode"
   in
 
-  let init_node id port rpc =
+  let init_node id port rpc metrics =
     let node_dir =
       Filename.concat
         "/tmp"
@@ -111,19 +82,33 @@ let boot_up_nodes n_nodes =
     in
     let run_command =
       Printf.sprintf
-        {|%s run --synchronisation-threshold 0 --network "sandbox" --data-dir "%s" %s --sandbox="./scripts/sandbox.json" |}
+        {|%s run --metrics-addr=:%d --synchronisation-threshold 0 --network "sandbox" --data-dir "%s" %s --sandbox="./scripts/sandbox.json" |}
         octez_node
+        metrics
         node_dir
         peers_thing
     in
     let%lwt _ = exec_command ~wait:true "bash" ["-c"; config_init_cmd] in
     let%lwt _ = exec_command ~wait:true "bash" ["-c"; identity_generate_cmd] in
     let%lwt process = exec_command "bash" ["-c"; run_command] in
-    Lwt.return {id; process; net_port = port; rpc_port = rpc; node_dir}
+    Lwt.return
+      {
+        id;
+        process;
+        net_port = port;
+        rpc_port = rpc;
+        metrics_port = metrics;
+        node_dir;
+      }
   in
 
   Lwt.all
-  @@ List.map (fun (id, port, rpc) -> init_node id port rpc) ids_and_ports
+  @@ List.map
+       (fun (id, port, rpc, metrics) ->
+         init_node id port rpc metrics >>= fun info ->
+         Logger.log Logger.NODE @@ Printf.sprintf "Started Node %d" id
+         >>= fun _ -> Lwt.return info)
+       ids_and_ports
 
 let activate_protocol node protocol_hash fitness params_path =
   let import_cmd =
@@ -147,13 +132,15 @@ let activate_protocol node protocol_hash fitness params_path =
 
   let%lwt _ = exec_command ~wait:true "bash" ["-c"; import_cmd] in
   let%lwt _ = exec_command ~wait:true "bash" ["-c"; activate_cmd] in
-  Lwt.return_unit
+  Logger.log Logger.INFO
+  @@ Printf.sprintf "Activated protocol %s on node %d" protocol_hash node.id
+  >>= fun _ -> Lwt.return_unit
 
 (*Might cause some probelms with not necessarily waiting for it to kill??*)
 let stop_test () =
   current_protocol := "" ;
   Hashtbl.iter (fun _ node -> node.process#kill 9) alive_nodes ;
-  running := false
+  current_status := Stopped
 
 (*
     TODO: activate the protocol, and also return info about the /tmp/folder for each node
@@ -162,6 +149,7 @@ let stop_test () =
 
 let start_test request_info =
   let current_time = Unix.gmtime (Unix.time ()) in
+  current_status := Starting ;
 
   let create_tmp_parameters params =
     let json_str = Data_encoding.Json.to_string params in
@@ -184,6 +172,19 @@ let start_test request_info =
     Protocol_detection.Detect_available_protocols.protocol_info_by_name
       request_info.protocol_name
   in
+
+  let%lwt () =
+    Logger.start_new_logger
+      Logger.
+        {
+          program_start = time_to_string program_start_time;
+          test_start = time_to_string current_time;
+          protocol = request_info.protocol_name;
+          nodes = request_info.n_nodes;
+          parameters = request_info.parameters;
+        }
+  in
+
   create_tmp_parameters request_info.parameters >>= fun tmp_params_path ->
   boot_up_nodes (Int32.to_int request_info.n_nodes) >>= fun nodes_info ->
   List.iter (fun (a : nodeInfo) -> Hashtbl.add alive_nodes a.id a) nodes_info ;
@@ -194,37 +195,29 @@ let start_test request_info =
        (Hashtbl.find alive_nodes 1).rpc_port)
     2.0
   >>= fun _ ->
-  let%lwt () =
-    Logger.start_new_logger
-      Logger.
-        {
-          program_start = time_to_string program_start_time;
-          test_start = time_to_string current_time;
-          protocol = request_info.protocol_name;
-          nodes = request_info.n_nodes;
-          parameters = Data_encoding.Json.to_string request_info.parameters;
-        }
-  in
-
   activate_protocol
     (Hashtbl.find alive_nodes 1)
     protocol_info.protocol_hash
     (Int32.to_int request_info.fitness)
     tmp_params_path
-  >>= fun _ -> Lwt.return ()
+  >>= fun _ ->
+  current_status := Running ;
+  (*Node_watcher.start_node_watcher nodes_info >>= fun _ -> *)
+  Lwt.return ()
 
 let start_test_handler request =
   let open Data_encoding in
   let%lwt json_body = Dream.body request in
   match Json.from_string json_body with
-  | Error a -> Dream.respond (Printf.sprintf "Error %s" a)
+  | Error a -> Dream.respond ~status:`Bad_Request (Printf.sprintf "Error %s" a)
   | Ok json ->
       let start_test_request = Json.destruct startTest_encoding json in
       Lwt.async (fun _ -> start_test start_test_request) ;
-      Dream.respond (Printf.sprintf "Ok, starting test")
+      Dream.respond ~status:`OK "Ok, starting test"
 
 let stop_test_handler () =
   stop_test () ;
+  Logger.(log INFO @@ Printf.sprintf "Stopping test") >>= fun _ ->
   Dream.json @@ result_to_json_string (Ok "Stopping test")
 
 let nodes_info_as_response () =
@@ -234,6 +227,7 @@ let nodes_info_as_response () =
       pid = Int32.of_int n.process#pid;
       port = Int32.of_int n.net_port;
       rpc = Int32.of_int n.rpc_port;
+      metrics = Int32.of_int n.metrics_port;
       dir = n.node_dir;
     }
   in
@@ -270,12 +264,12 @@ let available_protocols () =
 let status_handler () =
   let nodes = nodes_info_as_response () in
   let current_protocol = !current_protocol in
-  let running = !running in
+  let current_status = !current_status in
 
   Dream.json
   @@ construct_json_to_string
        statusResponse_encoding
-       {nodes; current_protocol; running}
+       {nodes; protocol = current_protocol; status = current_status}
 
 let protocol_parameters_handler protocol_name =
   let open Protocol_detection.Detect_available_protocols in

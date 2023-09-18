@@ -9,8 +9,10 @@
             ppx_deriving_encoding
             ppx_deriving
 
+            tezos-shell-services
+            tezos-base
             cohttp
-           cohttp-lwt-unix
+            cohttp-lwt-unix
             lwt
             )
  (preprocess (pps lwt_ppx ppx_deriving_encoding ppx_deriving.show))

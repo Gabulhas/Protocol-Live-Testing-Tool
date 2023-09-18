@@ -18,8 +18,8 @@ let metric_routes =
     (* Current size and rate of the transaction pool.*);
     Dream.get "/fork-rate" (fun _ -> Dream.html "")
     (* Frequency of forks in the blockchain.*);
-    Dream.get "/validator-stats" (fun _ -> Dream.html "")
-    (* Performance metrics specific to validators.*);
+    Dream.get "/custom-metric/:metric" (fun _ -> Dream.html "")
+    (* Check for specific metric in all nodes *);
   ]
 
 let other_routes =
@@ -38,16 +38,12 @@ let other_routes =
     (* Custom metrics (e.g., transaction rate, block time).*);
     Dream.post "/snapshot" (fun _ -> Dream.html "")
     (* Takes a snapshot of current state for later analysis.*);
-    Dream.post "/replay" (fun _ -> Dream.html "")
-    (* Replays events from a snapshot or log.*);
     Dream.post "/trigger-event" (fun _ -> Dream.html "")
     (* Custom events like smart contract deployments.*);
     Dream.get "/queries" (fun _ -> Dream.html "")
     (* Complex queries on the blockchain state.*);
     Dream.post "/batch-commands" (fun _ -> Dream.html "")
     (* Executes a batch of commands across nodes or clients.*);
-    Dream.get "/logs" (fun _ -> Dream.html "")
-    (* Fetch real-time or historical logs for debugging.*);
   ]
 
 let main_routes =
@@ -59,14 +55,14 @@ let main_routes =
     (* Accepts parameters like protocol type, number of nodes, clients, and their configurations.*)
     Dream.post "/stop-test" start_test_handler;
     (* Stops test started with /start-test.*)
-    Dream.get "/protocol_parameters/:name" (fun request ->
+    Dream.get "/protocol-parameters/:name" (fun request ->
         Dream.param request "name" |> protocol_parameters_handler);
     (* Get the mockup parameters from the protocol_folder.*)
-    Dream.get "/available-protocols" (fun _ -> available_protocols ());
+    Dream.get "/protocols" (fun _ -> available_protocols ());
     (* Returns the name, hash and path of available protocols *)
     Dream.post "/swap-protocol" (fun _ -> Dream.html "");
     (* Changes the consensus protocol on-the-fly without restarting nodes.*)
-    Dream.post "/stop_node/:id" (fun request ->
+    Dream.post "/stop-node/:id" (fun request ->
         Dream.param request "id" |> int_of_string |> stop_node);
     (*Stops a specific node*)
     Dream.get "/nodes" (fun _ -> nodes_handler ()) (*Gets info about the nodes*);

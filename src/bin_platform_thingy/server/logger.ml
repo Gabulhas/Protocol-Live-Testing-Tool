@@ -1,11 +1,13 @@
 open Utils
 
+let log_dir = "./logs_platform_thing"
+
 type logger_header = {
   program_start : string;
   test_start : string;
   protocol : string;
   nodes : int32;
-  parameters : string;
+  parameters : Data_encoding.Json.t;
 }
 [@@deriving encoding, show]
 
@@ -20,19 +22,33 @@ let level_str = function
 
 let log_file = ref None
 
-let async_log level message =
+let log level message =
+  let timestamp = Unix.gettimeofday () in
+  let tm = Unix.gmtime timestamp in
+  let time_str =
+    Printf.sprintf
+      "%02d-%02d %02d:%02d:%02d UTC"
+      (tm.Unix.tm_mon + 1)
+      tm.Unix.tm_mday
+      tm.Unix.tm_hour
+      tm.Unix.tm_min
+      tm.Unix.tm_sec
+  in
   match !log_file with
-  | Some chan -> Lwt_io.fprintf chan "[%s]: %s\n%!" (level_str level) message
+  | Some chan ->
+      Lwt_io.fprintf chan "[%s][%s]: %s\n%!" time_str (level_str level) message
   | None -> Lwt.fail (Failure "Log file not initialized")
 
 let start_new_logger logger_header_start =
   let open Lwt.Infix in
   let filename =
-    Printf.sprintf
-      "log_start_%s_current_%s.log"
-      logger_header_start.program_start
-      logger_header_start.test_start
+    Filename.concat log_dir
+    @@ Printf.sprintf
+         "log_start_%s_current_%s.log"
+         logger_header_start.program_start
+         logger_header_start.test_start
   in
+  ensure_dir_exists log_dir >>= fun _ ->
   Lwt_io.open_file
     ~flags:[Unix.O_APPEND; Unix.O_CREAT; Unix.O_WRONLY]
     ~perm:0o640
@@ -45,4 +61,4 @@ let start_new_logger logger_header_start =
     construct_json_to_string logger_header_encoding logger_header_start
   in
 
-  async_log HEADER logger_as_string
+  log HEADER logger_as_string
