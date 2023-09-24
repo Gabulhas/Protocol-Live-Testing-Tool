@@ -1,0 +1,12 @@
+[09-20 02:01:03 UTC][HEADER]: { "program_start": "20-02-01", "test_start": "20-02-01", "protocol": "demo",
+  "nodes": 2,
+  "parameters":
+    { "constants":
+        { "block_time": "60",
+          "initial_target":
+            "0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          "difficulty_adjust_epoch_size": 1000, "halving_epoch_size": 100,
+          "reward_multiplier": "1000000" } } }
+[09-20 02:01:04 UTC][NODE]: Started Node 1
+[09-20 02:01:05 UTC][NODE]: Started Node 2
+[09-20 02:01:08 UTC][INFO]: Activated protocol PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn on node 1

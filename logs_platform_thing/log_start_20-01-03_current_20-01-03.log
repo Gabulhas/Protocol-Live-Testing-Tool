@@ -1,0 +1,66 @@
+[09-20 01:03:16 UTC][HEADER]: { "program_start": "20-01-03", "test_start": "20-01-03", "protocol": "demo",
+  "nodes": 2,
+  "parameters":
+    { "constants":
+        { "block_time": "60",
+          "initial_target":
+            "0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          "difficulty_adjust_epoch_size": 1000, "halving_epoch_size": 100,
+          "reward_multiplier": "1000000" } } }
+[09-20 01:03:17 UTC][NODE]: Started Node 1
+[09-20 01:03:17 UTC][NODE]: Started Node 2
+[09-20 01:03:20 UTC][INFO]: Activated protocol PsSWgZdC8N49eiNMrL5WYqA3ukvwRud3Y7uHTGNHrcLwEvfGpMn on node 1
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~30")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~19")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~20")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~29")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~28")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~22")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~18")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~17")
+[09-20 01:03:25 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~21")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~25")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~30")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~12")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~24")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~22")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~13")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~27")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~9")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~28")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~10")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~18")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~14")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~23")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~7")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~11")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~26")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~16")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~29")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~26")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~10")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~15")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~8")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~21")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~5")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~6")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~24")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~9")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~5")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~4")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~25")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~6")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19002/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~4")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~11")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~7")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~27")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~14")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~17")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~16")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~19")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~8")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~12")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~13")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~15")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~23")
+[09-20 01:03:26 UTC][ERROR]: Failure("Invalid Code 404 on url http://127.0.0.1:19001/chains/main/blocks/BMD13D9M494NarQTHGfhwAvM5aoSYgboNfcBEz4Adsq2hHJRT9o~20")

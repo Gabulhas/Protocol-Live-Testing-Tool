@@ -2,15 +2,15 @@
 
 Remember, the point is to test in a real way, not just "swapping"
 
-Check this also https://tezos.gitlab.io/developer/openmetrics.html
+Note: You can actually control the behaviour of a node using octez-client-admin binary
 
-Also check how to gather a node's config from its rpc or similar
 
-Note: The way that a  protocol updates is in the modules Raw_context.activate or Alpha_context.activate
-
+# POW UPDATES
+Note: Difficulty adjustment isn't working
+Note: Add "Block size " and "Transaction count" to PoW
+Note: Can't add multiple transactions to the same block
 
 # Test Live Algorithms (Aacabar até dia 3)
-- Develop a user-friendly interface to start N nodes.
 - Implement transactions for testing purposes.
     - Standardize transaction interface across protocols.
     - Create "workers" (to fake users) that create transactions at random (to simulate the transactions) as well as accept some sort of "command executer" (that, for example, enables the creation of miners)
@@ -47,7 +47,9 @@ Note: The way that a  protocol updates is in the modules Raw_context.activate or
    - `services_registration.ml`.
    - `storage.ml`.
 
-# Other Ideas
-Data Persistence: How will you log or archive test data for later analysis?
-API: For external tools to interact with your testing platform, also, so you can code scripts in like python or go to perform more tests (like, running a network for X seconds, retrieve information from each node or from the platform kind of thing)
 
+# TESE
+- Falar do bin_tps que já vem da tezos
+- Falar de outros simuladores e testardores (Mittens)
+- Falar da ferramenta que gera protocolos!!!! Isto explicará porque é que fizemos o PoW
+- Falar do bin_platform_thingy

@@ -1,0 +1,5 @@
+ let get_time_to_consensus                      t = BlockRelated.get_time_to_consensus t t
+ let get_block_first_and_last_time_blocks       t = BlockRelated.get_block_first_and_last_time_blocks t
+ let get_propagation_times                      t = BlockRelated.get_propagation_times t
+ let get_blocks_per_second                      t = BlockRelated.get_blocks_per_second t
+ let get_discarded_blocks                       t = BlockRelated.get_discarded_blocks t

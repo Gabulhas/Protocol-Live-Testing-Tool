@@ -11,13 +11,14 @@ type logger_header = {
 }
 [@@deriving encoding, show]
 
-type log_level = HEADER | INFO | NODE | CLIENT | DEV
+type log_level = HEADER | INFO | NODE | CLIENT | DEV | ERROR
 
 let level_str = function
   | HEADER -> "HEADER"
   | INFO -> "INFO"
   | NODE -> "NODE"
   | CLIENT -> "CLIENT"
+  | ERROR -> "ERROR"
   | DEV -> "DEV"
 
 let log_file = ref None
@@ -62,3 +63,7 @@ let start_new_logger logger_header_start =
   in
 
   log HEADER logger_as_string
+
+let return_error_and_log e =
+  let%lwt _ = log ERROR (Printexc.to_string e) in
+  Lwt.return_error e
