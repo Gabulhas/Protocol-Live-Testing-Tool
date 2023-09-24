@@ -74,28 +74,7 @@ type validation_state = {
 
 
 
-(*
-Enforced signatures:
-
-begin_application: Context.t -> block_header -> validation_state
-    is used when validating a block received from the network.
-
-begin_partial_application: Context.t -> block_header -> validation_state
-    is used when the shell receives a block more than one level ahead of the current head (this happens, for instance, when synchronizing a node). This function should run quickly, as its main role is to reject invalid blocks from the chain as early as possible. 
-
-begin_construction: Context.t -> ?protocol_data: block_header_data -> validation_state
-     is used by the shell when instructed to build a block and for validating operations as they are gossiped on the network. This two cases are distinguished by the optional protocol_data argument: when only validating operations the argument is missing, as there is no block header. In both of these cases, the operations are not (yet) part of a block which is why the function does not expect a shell block header.
-    
-apply_operation: validation_state -> operation -> validation_state
-     is called after begin_application or begin_construction, and before finalize_block, for each operation in the block or in the mempool, respectively. Its role is to validate the operation and to update the (intermediary) state accordingly.
-    
-finalize_block: validation_state -> validation_result
-    represents the last step in a block validation sequence. It produces the context that will be used as input for the validation of the block’s successor candidates.
-*)
-
-
-
-
+(*test*)
 
 let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
@@ -110,10 +89,8 @@ let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~p
         let mode =
             Application {block_header; fitness} in
         {ctxt; op_count=0; mode}
-    (*OP count should be 0 because we are just verifying the header*)
 
 
-(*Maybe change this*)
 let begin_partial_application ~chain_id:_ ~ancestor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
         let ctxt = ancestor_context in

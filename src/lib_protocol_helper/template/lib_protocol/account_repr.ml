@@ -1,3 +1,6 @@
+(*This is a generic definition of an account, similar to Bitcoin's, where
+  an account is just an hash of a Public Key
+*)
 type t = Signature.Public_key_hash.t
 
 type account = t

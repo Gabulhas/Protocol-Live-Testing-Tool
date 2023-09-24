@@ -11,7 +11,7 @@ type logger_header = {
 }
 [@@deriving encoding, show]
 
-type log_level = HEADER | INFO | NODE | CLIENT | DEV | ERROR
+type log_level = HEADER | INFO | NODE | CLIENT | DEV | ERROR | NETWORK
 
 let level_str = function
   | HEADER -> "HEADER"
@@ -20,6 +20,7 @@ let level_str = function
   | CLIENT -> "CLIENT"
   | ERROR -> "ERROR"
   | DEV -> "DEV"
+  | NETWORK -> "NETWORK"
 
 let log_file = ref None
 

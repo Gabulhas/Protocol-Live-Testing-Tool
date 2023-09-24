@@ -16,7 +16,9 @@ let pipeline
       protocol_env_version,
       _use_lib_protocol_template,
       _use_lib_client_template ) =
-  let protocol_name_dir = Filename.concat "src" ("proto_" ^ protocol_name) in
+  let protocol_name_dir =
+    Filename.concat "src" ("proto_custom_" ^ protocol_name)
+  in
   let env_version_string = string_of_int protocol_env_version in
 
   let protocol_hash =

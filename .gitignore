@@ -57,6 +57,7 @@ __pycache__
 /octez-binaries
 /bootstrapper 
 /platform_server
+/logs_platform_thing/*
 
 
 /src/proto_*/parameters/*-parameters.json

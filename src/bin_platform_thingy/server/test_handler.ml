@@ -390,7 +390,7 @@ let split_network list_of_list =
          (fun node -> List.map (fun peer -> kick_peer node peer) to_be_excluded)
          network
   in
-
+  Logger.(log NETWORK "Splitting the network") >>= fun _ ->
   Lwt.all
   @@ List.map
        (fun node_id ->
@@ -426,6 +426,7 @@ let split_network_handler request =
 
 let rejoin_network () =
   let all_ids = Hashtbl.fold (fun key _ res -> key :: res) alive_nodes [] in
+  Logger.(log NETWORK "Rejoining network") >>= fun _ ->
   Lwt.all
   @@ List.map
        (fun id ->
