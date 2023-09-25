@@ -1,5 +1,7 @@
 open Lwt.Infix
 
+let show_command_outputs = true
+
 let construct_json_to_string encoding v =
   Data_encoding.Json.construct encoding v |> Data_encoding.Json.to_string
 
@@ -21,10 +23,11 @@ let contains_substring str sub =
   with Not_found -> false
 
 let exec_command ?(wait = false) cmd args =
-  let process =
-    Lwt_process.open_process ~stderr:`Dev_null ("", Array.of_list (cmd :: args))
-  in
-  Lwt_io.close process#stdout >>= fun () ->
+  let process = Lwt_process.open_process ("", Array.of_list (cmd :: args)) in
+
+  (if show_command_outputs then Lwt.return_unit
+  else Lwt_io.close process#stdout)
+  >>= fun () ->
   if wait then
     let%lwt _ = process#status in
     Lwt.return process

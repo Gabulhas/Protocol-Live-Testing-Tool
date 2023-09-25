@@ -24,5 +24,5 @@ sed -i "s/TEMPLATE_FILES_PART/${ocamlfiles//$'\n'/\\n}/" $directory_to_fetch/dun
 
 cd ../../
 eval $(opam env)
-make build
+make octez-node && make octez-client
 cd $current_directory

@@ -4,7 +4,6 @@
  (libraries common 
             dream 
             tyxml 
-            pages 
             protocol_detection
             ppx_deriving_encoding
             ppx_deriving

@@ -74,7 +74,7 @@ type validation_state = {
 
 
 
-(*test*)
+(*beans*)
 
 let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
@@ -82,8 +82,7 @@ let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~p
         let timestamp =block_header.shell.timestamp  in 
         Logging.log Notice "begin_application: level %s, timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
         Alpha_context.prepare ctxt ~level ~timestamp:predecessor_timestamp >>=? fun ctxt ->
-        let predecessor_level = Int32.pred level in
-        Apply.begin_application ctxt block_header predecessor_level timestamp >|=? fun ctxt ->
+        Apply.begin_application ctxt block_header timestamp >|=? fun ctxt ->
 
         let fitness= Fitness_repr.({level}) in
         let mode =
@@ -98,12 +97,12 @@ let begin_partial_application ~chain_id:_ ~ancestor_context ~predecessor_timesta
         let predecessor_level = Int32.pred level in
         Logging.log Notice "begin_partial_application: level %s, timestamp %s" (Int32.to_string level) (Time.to_notation timestamp);
         Alpha_context.prepare ctxt ~level:predecessor_level ~timestamp:predecessor_timestamp >>=? fun ctxt ->
-        Apply.begin_application ctxt block_header predecessor_level timestamp >|=? fun ctxt ->
+        Apply.begin_partial_application ctxt block_header >|=? fun ctxt ->
         let mode =
             Partial_application {block_header; fitness= Fitness_repr.{level=predecessor_level}} in
         {ctxt; op_count=0; mode}
 
-let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp ~predecessor_level ~predecessor_fitness ~predecessor ~timestamp ?(protocol_data : block_header_data option) () =
+let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timestamp:_ ~predecessor_level ~predecessor_fitness ~predecessor ~timestamp ?(protocol_data : block_header_data option) () =
   let level = Int32.succ predecessor_level in
   Logging.log Notice "begin_construction %s | predecessor_level %s | predecessor_fitness %s | predecessor_hash %s | protocol_data %s" 
   (match protocol_data with Some _ -> "Full construction" | _ -> "Partial construction")
@@ -118,14 +117,16 @@ let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timest
   | None ->
 
       let mode = Partial_construction {predecessor; predecessor_fitness; predecessor_level} in
-      Apply.calculate_current_target ctxt (Raw_context.level ctxt) timestamp >>=? fun (_, ctxt) ->
+      Apply.calculate_current_target ctxt (Raw_context.level ctxt) timestamp >>=? fun (current_target, ctxt) ->
+      Logging.log Notice "PARTIAL_CONSTRUCTION CURRENT TARGET %s" (current_target |> Target_repr.to_hex_string);
+
       Lwt.return (ok(mode, ctxt))
 
   | Some protocol_data ->
       let mode =
           Full_construction {predecessor; level; protocol_data; predecessor_level; miner=protocol_data.miner}
       in
-      Apply.begin_construction ctxt predecessor_timestamp protocol_data >|=? fun ctxt ->
+      Apply.begin_construction ctxt timestamp protocol_data >|=? fun ctxt ->
       (mode, ctxt)
   )
   >|=? fun (mode, ctxt) ->

@@ -1,6 +1,0 @@
-(library
- (name pages)
- (package platform_thingy)
- (libraries common tyxml dream)
- (library_flags (:standard -linkall))
- )

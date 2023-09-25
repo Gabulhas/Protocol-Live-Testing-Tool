@@ -85,23 +85,24 @@ let calculate_current_target ctxt level current_timestamp =
     (Time.to_seconds current_timestamp)
     (Time.to_seconds last_epoch_time)
   in
-    Logging.log Notice "calculate_current_target: current_target %s | current_timestamp %s | last_epoch_time %s | Sub(current_timestamp - last_epoch_time): %s" (current_target |> Target_repr.to_hex_string) (Time.to_notation current_timestamp) (Time.to_notation last_epoch_time ) (Int64.to_string time_taken);
+Logging.log Notice "RECALCULATING: current_target %s" (current_target |> Target_repr.to_hex_string);
+Logging.log Notice "RECALCULATING: current_timestamp %s" (Time.to_notation current_timestamp);
+Logging.log Notice "RECALCULATING: last_epoch_time %s" (Time.to_notation last_epoch_time);
+Logging.log Notice "RECALCULATING: Sub(current_timestamp - last_epoch_time): %s" (Int64.to_string time_taken);
     let epoch_size_seconds =
         Int64.mul (Time.to_seconds constants.block_time) (Int64.of_int32 epoch_size)
             in
 
 
     let result_target = Z.div (Z.mul current_target (Z.of_int64 time_taken)) (Z.of_int64 epoch_size_seconds) in
-    Logging.log Notice "Temp %s" ( result_target |> Target_repr.to_hex_string) ;
+Logging.log Notice "Temp: %s" (result_target |> Target_repr.to_hex_string);
 
-    Logging.log Notice "calculate_current_target: Current_target %s | Last_epoch_time %s | Time_taken: %s | Epoch_size_seconds: %s | New_adjust: %s | Final_adjust: %s" 
-        (Target_repr.to_hex_string current_target)
-        (Time.to_notation last_epoch_time )
-        (time_taken |> Int64.to_string)
-        (epoch_size_seconds |> Int64.to_string)
-        (result_target |> Target_repr.to_hex_string)
-        (result_target |> Target_repr.to_hex_string)
-        ;
+Logging.log Notice "RECALCULATING: Current_target %s" (Target_repr.to_hex_string current_target);
+Logging.log Notice "RECALCULATING: Last_epoch_time %s" (Time.to_notation last_epoch_time);
+Logging.log Notice "RECALCULATING: Time_taken %s" (Int64.to_string time_taken);
+Logging.log Notice "RECALCULATING: Epoch_size_seconds %s" (Int64.to_string epoch_size_seconds);
+Logging.log Notice "RECALCULATING: New_adjust %s" (result_target |> Target_repr.to_hex_string);
+Logging.log Notice "RECALCULATING: Final_adjust %s" (result_target |> Target_repr.to_hex_string);
 
     Header_storage.update_current_target ctxt result_target >>=? fun (ctxt) ->
     (current_target, ctxt) |> ok |> Lwt.return
@@ -192,25 +193,10 @@ let check_same_target this_target current_target =
       Lwt.return (ok (()))
 
 
-      (*
-let timestamp_in_future ctxt current_timestamp previous_timestamp = 
-    (*
-    if it's 2 times in the future, it returns error
-     *)
-let constants = Alpha_context.constants ctxt in
-let open Int64 in
-let open Compare.Int64 in
-if Time.diff current_timestamp previous_timestamp > Int64.mul (Time.to_seconds constants.block_time) 2L then
-    fail TimestampInTheFuture
-    else
-        Lwt.return (ok())
-
-*)
-
-let begin_application ctxt (block_header : Alpha_context.Block_header.t) level
+let begin_application ctxt (block_header : Alpha_context.Block_header.t) 
     current_timestamp : (t, error trace) result Lwt.t =
         let open Proof_of_work in
-        calculate_current_target ctxt level current_timestamp
+        calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp
   >>=? fun (current_target, ctxt) ->
       calculate_current_reward ctxt (Raw_context.level ctxt)
       >>=? fun current_reward ->
@@ -219,6 +205,20 @@ let begin_application ctxt (block_header : Alpha_context.Block_header.t) level
       check_same_target block_header.protocol_data.target current_target
   >>=? fun () ->
       check_block block_header current_target >|=? fun () -> ctxt
+
+
+let begin_partial_application ctxt (block_header : Alpha_context.Block_header.t): (t, error trace) result Lwt.t =
+    let open Proof_of_work in
+    calculate_current_reward ctxt (Raw_context.level ctxt)
+    >>=? fun current_reward ->
+        credit_miner ctxt block_header.protocol_data.miner current_reward
+  >>=? fun ctxt ->
+      check_block block_header block_header.protocol_data.target >|=? fun () -> ctxt
+
+
+
+
+
 
 let begin_construction ctxt current_timestamp
     (protocol_data : Alpha_context.Block_header.protocol_data): (t, error trace) result Lwt.t =

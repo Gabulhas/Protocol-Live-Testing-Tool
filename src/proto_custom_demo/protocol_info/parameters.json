@@ -3,7 +3,7 @@
         {
             "block_time": "60",
             "initial_target": "0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-            "difficulty_adjust_epoch_size": 1000,
+            "difficulty_adjust_epoch_size": 5,
             "halving_epoch_size": 100,
             "reward_multiplier": "1000000"
         }

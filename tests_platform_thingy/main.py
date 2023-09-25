@@ -52,15 +52,16 @@ def get_nodes():
     return SESSION.get(ADDRESS + "/nodes").json()
 
 
-def reveal_and_start_mine(node):
+def reveal_and_start_mine(node, miner_address):
     subprocess.run(["./octez-client", "--endpoint", "http://127.0.0.1:" + str(node["rpc"]),
                    "reveal", "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU"])
 
     subprocess.Popen(
         ["./octez-baker-custom-demo", "-base-dir", node["dir"], "-endpoint", f"http://localhost:{node['rpc']}",
-         "run", "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU", "2000000"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+         "run", miner_address, "2000000"]
+        # ,
+        # stdout=subprocess.DEVNULL,
+        # stderr=subprocess.DEVNULL
     )
 
 
@@ -99,8 +100,11 @@ async def show_heads(session, node):
 async def test():
     protocol_name = "demo"
     parameters = get_protocol_parameters(protocol_name)
+    number_of_nodes = 1
+    fitness = 0
 
-    start_test_response = start_test(protocol_name, 2, 0, parameters)
+    start_test_response = start_test(
+        protocol_name, number_of_nodes, 0, parameters)
 
     print("Waiting for nodes to fully load")
     last_status = 'stopped'
@@ -114,11 +118,11 @@ async def test():
     nodes = get_nodes()
     print(nodes)
 
-    miner_node = nodes[0]
-
     print("Mining:")
-    reveal_and_start_mine(miner_node)
+    reveal_and_start_mine(nodes[0], MINER_ADD)
+    reveal_and_start_mine(nodes[1], OTHER_ADD)
 
+    target_node = nodes[0]
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_tps(session)]
 
@@ -127,7 +131,7 @@ async def test():
         while True:
             sleep(1)
             last_block_info = get_block_info(
-                miner_node["rpc"], get_head_info(miner_node["rpc"]))
+                target_node["rpc"], get_head_info(target_node["rpc"]))
             level = last_block_info["header"]["level"]
 
             if last_level != level:
