@@ -19,7 +19,6 @@ let parse_args () =
   let protocol_name = ref "" in
   let protocol_env_version = ref 0 in
   let use_lib_protocol_template = ref false in
-  let use_lib_client_template = ref false in
   let specs =
     [
       ( "-name",
@@ -37,17 +36,11 @@ let parse_args () =
       ( "-use-lib-protocol-template",
         Arg.Set use_lib_protocol_template,
         "Use lib_protocol template" );
-      ( "-use-lib-client-template",
-        Arg.Set use_lib_client_template,
-        "Use lib_client template" );
     ]
   in
   Arg.parse specs (fun _ -> ()) "Usage: bootstrapper [options]" ;
 
-  ( !protocol_name,
-    !protocol_env_version,
-    !use_lib_protocol_template,
-    !use_lib_client_template )
+  (!protocol_name, !protocol_env_version, !use_lib_protocol_template)
 
 let prompt () =
   Printf.printf
@@ -73,17 +66,7 @@ let prompt () =
     Scanf.scanf " %s" (fun s -> s == "" || s == "y" || s == "Y")
   in
 
-  Printf.printf
-    "Do you want to use the lib_client template? (same as lib_protocol but for \
-     the client part)? [Y/n]" ;
-  let use_lib_client_template =
-    Scanf.scanf " %s" (fun s -> s == "" || s == "y" || s == "Y")
-  in
-
-  ( protocol_name,
-    protocol_env_version,
-    use_lib_protocol_template,
-    use_lib_client_template )
+  (protocol_name, protocol_env_version, use_lib_protocol_template)
 
 let () =
   if Array.length Sys.argv < 2 then prompt () |> pipeline

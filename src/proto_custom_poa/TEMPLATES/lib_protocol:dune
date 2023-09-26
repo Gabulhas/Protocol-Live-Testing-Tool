@@ -2,58 +2,58 @@
 ; Edit file manifest/main.ml instead.
 
 (library
- (name tezos_protocol_environment_poa)
- (public_name tezos-protocol-poa.environment)
+ (name tezos_protocol_environment_custom_poa)
+ (public_name tezos-protocol-custom-poa.environment)
  (instrumentation (backend bisect_ppx))
  (libraries
   custom-protocol-helper
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
- (modules Tezos_protocol_environment_poa))
+ (modules Tezos_protocol_environment_custom_poa))
 
 (rule
- (targets tezos_protocol_environment_poa.ml)
+ (targets tezos_protocol_environment_custom_poa.ml)
  (action
   (write-file
    %{targets}
-   "module Name = struct let name = \"poa\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
+   "module Name = struct let name = \"custom-poa\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
 
 
 (library
- (name tezos_raw_protocol_poa)
- (public_name tezos-protocol-poa.raw)
+ (name tezos_raw_protocol_custom_poa)
+ (public_name tezos-protocol-custom-poa.raw)
  (instrumentation (backend bisect_ppx))
  (libraries
   ppx_deriving_encoding
-  tezos-protocol-poa.environment)
+  tezos-protocol-custom-poa.environment)
  (library_flags (:standard -linkall))
  (flags
   (:standard)
   -nostdlib
   -nopervasives
-  -open Tezos_protocol_environment_poa
-  -open Tezos_protocol_environment_poa.Pervasives
-  -open Tezos_protocol_environment_poa.Error_monad)
+  -open Tezos_protocol_environment_custom_poa
+  -open Tezos_protocol_environment_custom_poa.Pervasives
+  -open Tezos_protocol_environment_custom_poa.Error_monad)
  (preprocess (pps ppx_deriving_encoding))
  (modules
    TEMPLATE_MODULES_PART
   ))
 
 (library
- (name tezos_protocol_poa)
- (public_name tezos-protocol-poa)
+ (name tezos_protocol_custom_poa)
+ (public_name tezos-protocol-custom-poa)
  (instrumentation (backend bisect_ppx))
  (libraries
   tezos-protocol-environment
   tezos-protocol-environment.sigs
-  tezos-protocol-poa.raw)
+  tezos-protocol-custom-poa.raw)
  (flags
   (:standard)
   -nopervasives)
- (modules Protocol Tezos_protocol_poa))
+ (modules Protocol Tezos_protocol_custom_poa))
 
 (install
- (package tezos-protocol-poa)
+ (package tezos-protocol-custom-poa)
  (section lib)
  (files (TEZOS_PROTOCOL as raw/TEZOS_PROTOCOL)))
 
@@ -62,14 +62,14 @@
  (action
   (write-file
    %{targets}
-   "\nlet hash = Tezos_crypto.Protocol_hash.of_b58check_exn \"PtMiuQiwsBr33CWASTY6BsesRDKGbMkxfeaLuH8ANpfK9RtxbWw\"\nlet name = Tezos_protocol_environment_poa.Name.name\ninclude Tezos_raw_protocol_poa\ninclude Tezos_raw_protocol_poa.Main\n")))
+   "\nlet hash = Tezos_crypto.Protocol_hash.of_b58check_exn \"PrxHD7cDaHHgSufj5DLAipNy36eRVMh7wrpKBEoMEsfMYNKcpmy\"\nlet name = Tezos_protocol_environment_custom_poa.Name.name\ninclude Tezos_raw_protocol_custom_poa\ninclude Tezos_raw_protocol_custom_poa.Main\n")))
 
 (rule
- (targets tezos_protocol_poa.ml)
+ (targets tezos_protocol_custom_poa.ml)
  (action
   (write-file
    %{targets}
-   "\nmodule Environment = Tezos_protocol_environment_poa\nmodule Protocol = Protocol\n")))
+   "\nmodule Environment = Tezos_protocol_environment_custom_poa\nmodule Protocol = Protocol\n")))
 
 (rule
  (alias runtest_compile_protocol)
@@ -79,7 +79,7 @@
  (action (run %{bin:octez-protocol-compiler} -no-hash-check -warn-error +a .)))
 
 (library
- (name tezos_protocol_poa_functor)
+ (name tezos_protocol_custom_poa_functor)
  (libraries
   tezos-protocol-environment
   tezos-protocol-environment.sigs)
@@ -101,11 +101,11 @@
     (run %{bin:octez-protocol-compiler.octez-protocol-packer} %{src_dir})))))
 
 (library
- (name tezos_embedded_protocol_poa)
- (public_name tezos-embedded-protocol-poa)
+ (name tezos_embedded_protocol_custom_poa)
+ (public_name tezos-embedded-protocol-custom-poa)
  (instrumentation (backend bisect_ppx))
  (libraries
-  tezos-protocol-poa
+  tezos-protocol-custom-poa
   tezos-protocol-updater
   tezos-protocol-environment)
  (library_flags (:standard -linkall))
@@ -121,7 +121,7 @@
    %{targets}
    (chdir
     %{workspace_root}
-    (run %{bin:octez-embedded-protocol-packer} %{src_dir} poa)))))
+    (run %{bin:octez-embedded-protocol-packer} %{src_dir} custom_poa)))))
 
 
 (env (_ 

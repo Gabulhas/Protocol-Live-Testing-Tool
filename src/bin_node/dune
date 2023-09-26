@@ -33,6 +33,7 @@
   prometheus-app.unix
   lwt-exit
   uri
+
   (select void_for_linking-tezos-embedded-protocol-genesis from
    (tezos-embedded-protocol-genesis -> void_for_linking-tezos-embedded-protocol-genesis.empty)
    (-> void_for_linking-tezos-embedded-protocol-genesis.empty))
@@ -47,6 +48,15 @@
  (select void_for_linking-tezos-embedded-protocol-custom-demo from
    (tezos-embedded-protocol-custom-demo -> void_for_linking-tezos-embedded-protocol-custom-demo.empty)
    (-> void_for_linking-tezos-embedded-protocol-custom-demo.empty))
+
+
+ ;; FOR BOOTSTRAPPER. DON'T REMOVE 
+(select void_for_linking-tezos-embedded-protocol-custom-poa from
+  (tezos-embedded-protocol-custom-poa -> void_for_linking-tezos-embedded-protocol-custom-poa.empty)
+  (-> void_for_linking-tezos-embedded-protocol-custom-poa.empty))
+
+;; FOR BOOTSTRAPPER. DON'T REMOVE $BIN_NODE_1$
+  
 
   tezos-embedded-protocol-000-Ps9mPmXa
   (select void_for_linking-tezos-embedded-protocol-001-PtCJ7pwo from
@@ -155,7 +165,14 @@
    (write-file void_for_linking-tezos-embedded-protocol-genesis.empty "")
    (write-file void_for_linking-tezos-embedded-protocol-demo-noops.empty "")
    (write-file void_for_linking-tezos-embedded-protocol-demo-counter.empty "")
+
    (write-file void_for_linking-tezos-embedded-protocol-custom-demo.empty "")
+
+ ;; FOR BOOTSTRAPPER. DON'T REMOVE 
+(write-file void_for_linking-tezos-embedded-protocol-custom-poa.empty "")
+;; FOR BOOTSTRAPPER. DON'T REMOVE $BIN_NODE_2$
+  
+
    (write-file void_for_linking-tezos-embedded-protocol-001-PtCJ7pwo.empty "")
    (write-file void_for_linking-tezos-embedded-protocol-002-PsYLVpVv.empty "")
    (write-file void_for_linking-tezos-embedded-protocol-003-PsddFKi3.empty "")
