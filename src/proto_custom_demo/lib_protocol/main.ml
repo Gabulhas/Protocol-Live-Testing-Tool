@@ -12,7 +12,7 @@ let max_operation_data_length = 32 * 1024 (*Move this to constants*)
 
 let max_block_length = Alpha_context.Block_header.max_header_length
 
-let validation_passes = Updater.[{max_size = 1000; max_op = None}]
+let validation_passes = Updater.[{max_size = 1000; max_op = Some 10000}]
 
 let acceptable_pass _op = Some 0
 
@@ -42,7 +42,16 @@ let operation_data_and_receipt_encoding =
 
 let acceptable_passes _op = [0]
 
-let relative_position_within_block _a _b = 0
+let relative_position_within_block (a: operation) (b: operation): int = 
+    match a.protocol_data.content, b.protocol_data.content with
+    | Management a, Management b -> (
+        if Account_repr.equal a.source b.source then
+            Z.compare a.counter b.counter
+        else
+            0
+    )
+
+
 
 type validation_mode =
   | Application of {
@@ -72,9 +81,6 @@ type validation_state = {
   mode: validation_mode;
 }
 
-
-
-(*beans*)
 
 let begin_application ~chain_id:_ ~predecessor_context ~predecessor_timestamp ~predecessor_fitness:_ (block_header: block_header) =
     let level = block_header.shell.level in
@@ -134,24 +140,15 @@ let begin_construction ~chain_id:_ ~predecessor_context:ctxt ~predecessor_timest
 
 
 
-let apply_operation ({ctxt; op_count; mode} as data) (operation: operation)  =
-    Logging.log Notice "apply_operation %s" (Utils.to_string_json Operation_repr.encoding operation);
-  match mode with
-  | Partial_application _ ->
-        Apply.apply_operation
-        ctxt
-        operation
-      >|=? fun (ctxt, result) ->
-          let op_count = op_count + 1 in
-          ({data with ctxt; op_count}, result)
-  | _ ->
-          Apply.apply_operation
-        ctxt
-        operation
-      >|=? fun (ctxt, result) ->
-          let op_count = op_count + 1 in
+let apply_operation ({ctxt; op_count; _} as data) (operation: operation)  =
+  Logging.log Notice "apply_operation %s" (Utils.to_string_json Operation_repr.encoding operation);
+  Apply.apply_operation ctxt
+      operation
+    >|=? fun (ctxt, result) ->
+        let op_count = op_count + 1 in
 
-          ({data with ctxt; op_count}, result)
+        ({data with ctxt; op_count}, result)
+
 
 (**)
 

@@ -216,10 +216,6 @@ let begin_partial_application ctxt (block_header : Alpha_context.Block_header.t)
       check_block block_header block_header.protocol_data.target >|=? fun () -> ctxt
 
 
-
-
-
-
 let begin_construction ctxt current_timestamp
     (protocol_data : Alpha_context.Block_header.protocol_data): (t, error trace) result Lwt.t =
   calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp

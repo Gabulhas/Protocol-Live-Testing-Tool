@@ -40,11 +40,12 @@ let get_current_target (cctxt : Protocol_client_context.full) =
     (cctxt#chain, cctxt#block)
   >>=? fun target -> return target
 
-let get_next_target (cctxt : Protocol_client_context.full) level timestamp=
+let get_next_target (cctxt : Protocol_client_context.full) level timestamp =
   Services.ContextServices.Commands.next_target
     cctxt
     (cctxt#chain, cctxt#block)
-    level timestamp
+    level
+    timestamp
   >>=? fun target -> return target
 
 let get_current_counter (cctxt : Protocol_client_context.full) account =
@@ -61,13 +62,12 @@ let get_new_counter (cctxt : Protocol_client_context.full) account =
     account
   >>=? fun cnt -> return (Z.succ cnt)
 
-let is_revealed (cctxt: Protocol_client_context.full) account=
+let is_revealed (cctxt : Protocol_client_context.full) account =
   Services.AccountServices.Commands.revealed
     cctxt
     (cctxt#chain, cctxt#block)
     account
-  >>=? fun is_revealed -> return (is_revealed)
-
+  >>=? fun is_revealed -> return is_revealed
 
 let get_operation_header (cctxt : Protocol_client_context.full) =
   Alpha_block_services.hash cctxt () >|=? fun (block_hash : Block_hash.t) ->
@@ -87,16 +87,21 @@ let inject_op (cctxt : Protocol_client_context.full)
       let mbytes =
         Data_encoding.Binary.to_bytes_exn Operation_repr.encoding op
       in
-      Shell_services.Injection.operation cctxt mbytes >>=? fun op_hash ->
+      Shell_services.Injection.operation ~async:false cctxt mbytes
+      >>=? fun op_hash ->
       let injected = Operation_hash.to_short_b58check op_hash in
       cctxt#message "Injected: %s" injected >>= fun () -> return_unit
   | _ -> assert false
 
 let build_manager_operation_protocol_data cctxt (src_pk : Signature.public_key)
-    src_sk operation_content =
+    src_sk operation_content counter_opt =
   let open Operation_repr in
   let src_hash = Signature.Public_key.hash src_pk in
-  get_current_counter cctxt src_hash >>=? fun current_counter ->
+
+  (match counter_opt with
+  | None -> get_current_counter cctxt src_hash
+  | Some c -> Lwt.return_ok c)
+  >>=? fun current_counter ->
   get_operation_header cctxt >>=? fun shell_header ->
   let fee = Tez_repr.zero in
   let protocol_data_content =

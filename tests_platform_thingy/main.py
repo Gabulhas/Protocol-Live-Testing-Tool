@@ -1,3 +1,4 @@
+import threading
 import requests
 from random import shuffle
 from time import sleep
@@ -58,10 +59,9 @@ def reveal_and_start_mine(node, miner_address):
 
     subprocess.Popen(
         ["./octez-baker-custom-demo", "-base-dir", node["dir"], "-endpoint", f"http://localhost:{node['rpc']}",
-         "run", miner_address, "2000000"]
-        # ,
-        # stdout=subprocess.DEVNULL,
-        # stderr=subprocess.DEVNULL
+         "run", miner_address, "2000000"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
     )
 
 
@@ -75,32 +75,47 @@ async def fetch_tps(session):
 
 async def spam_transactions(session, node):
     node_rpc = node["rpc"]
+
     while True:
         subprocess.run(
-            ["./octez-client", "--endpoint", f"http://127.0.0.1:{node_rpc}",
-             "transfer", "1", "from", MINER_ADD, "to", OTHER_ADD],
+            ["./octez-client", "--endpoint", f"http://127.0.0.1:{node_rpc}", "transfer", "1", "from",
+                MINER_ADD, "to", OTHER_ADD],
         )
-        await asyncio.sleep(0.1)  # Adjust the sleep time as needed
+
+        await asyncio.sleep(0.2)  # Adjust the sleep time as needed
+
+
+def get_head_hash(node_rpc):
+    return SESSION.get(f"http://127.0.0.1:{node_rpc}/chains/main/blocks").json()[0][0]
 
 
 def get_head_info(node_rpc):
-    return SESSION.get(f"http://127.0.0.1:{node_rpc}/chains/main/blocks").json()[0][0]
+    return get_block_info(node_rpc, get_head_hash(node_rpc))
 
 
 def get_block_info(node_rpc, block_id):
     return SESSION.get(f"http://127.0.0.1:{node_rpc}/chains/main/blocks/{block_id}").json()
 
 
+def get_account_counter(node_rpc, account):
+
+    return int(
+        str(SESSION.get(f"http://localhost:{node_rpc}/chains/main/blocks/head/context/account/{account}/counter").text).strip(
+        ).removeprefix("\"").removesuffix("\"")
+    )
+
+
 async def show_heads(session, node):
     while True:
         print(json.dumps(get_block_info(
-            node["rpc"], get_head_info(node["rpc"])), indent=2))
+            node["rpc"], get_head_hash(node["rpc"])), indent=2))
 
 
 async def test():
+    blocks_to_wait = 5
     protocol_name = "demo"
     parameters = get_protocol_parameters(protocol_name)
-    number_of_nodes = 1
+    number_of_nodes = 2
     fitness = 0
 
     start_test_response = start_test(
@@ -120,29 +135,30 @@ async def test():
 
     print("Mining:")
     reveal_and_start_mine(nodes[0], MINER_ADD)
-    reveal_and_start_mine(nodes[1], OTHER_ADD)
 
     target_node = nodes[0]
+
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_tps(session)]
 
-        print("Waiting for level 10 block")
+        print(f"Waiting for level {blocks_to_wait} block")
         last_level = -1
         while True:
             sleep(1)
             last_block_info = get_block_info(
-                target_node["rpc"], get_head_info(target_node["rpc"]))
+                target_node["rpc"], get_head_hash(target_node["rpc"]))
             level = last_block_info["header"]["level"]
 
             if last_level != level:
                 print(f"Level {level}")
                 last_level = level
 
-            if level >= 10:
+            if level >= blocks_to_wait:
                 break
 
-        for node in nodes:
-            tasks.append(spam_transactions(session, node))
+        # for node in nodes:
+        #     tasks.append(spam_transactions(session, node))
+        tasks.append(spam_transactions(session, target_node))
 
         await asyncio.gather(*tasks)
 

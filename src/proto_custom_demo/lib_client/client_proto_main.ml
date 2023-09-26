@@ -53,10 +53,8 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
       @@ stop)
       (fun () msg cctxt ->
         Commands.is_revealed cctxt msg >>=? fun is_revealed ->
-        let r_string = (if is_revealed then "YES" else "NO") in
-        cctxt#message "Balance: %sꜩ" r_string >>= fun () ->
-        return_unit);
-
+        let r_string = if is_revealed then "YES" else "NO" in
+        cctxt#message "Balance: %sꜩ" r_string >>= fun () -> return_unit);
     command
       ~group
       ~desc:"Shows current target."
@@ -71,7 +69,7 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
     command
       ~group
       ~desc:"Transfers Tez from Source to Destination"
-      no_options
+      (args1 counter_arg)
       (prefixes ["transfer"]
       @@ tez_param ~name:"amount" ~desc:"Amount Tez"
       @@ prefixes ["from"]
@@ -79,7 +77,7 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
       @@ prefixes ["to"]
       @@ account_param ~name:"account" ~desc:"Account b58check"
       @@ stop)
-      (fun () amount source destination cctxt ->
+      (fun counter amount source destination cctxt ->
         Client_keys.get_key cctxt source >>=? fun (_, src_pk, src_sk) ->
         let operation_content =
           Operation_repr.Transaction {amount; destination}
@@ -89,6 +87,7 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
           src_pk
           src_sk
           operation_content
+          counter
         >>=? fun operation -> Commands.inject_op cctxt operation);
     command
       ~group
@@ -105,6 +104,7 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
           src_pk
           src_sk
           operation_content
+          None
         >>=? fun operation -> Commands.inject_op cctxt operation);
   ]
 

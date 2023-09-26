@@ -26,7 +26,6 @@ let monitor_operations cctxt =
 
 (*So far theres only a type of transactions*)
 let get_latest_operations state =
-  Lwt_mutex.unlock state.lock ;
   Lwt.return
     [Operation_set.fold (fun op init -> op :: init) state.operation_pool []]
 

@@ -3,8 +3,8 @@
         {
             "block_time": "60",
             "initial_target": "0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-            "difficulty_adjust_epoch_size": 5,
+            "difficulty_adjust_epoch_size": 100,
             "halving_epoch_size": 100,
-            "reward_multiplier": "1000000"
+            "reward_multiplier": "10000000000000"
         }
 }

@@ -1,0 +1,182 @@
+; This file was automatically generated, do not edit.
+; Edit file manifest/main.ml instead.
+
+(library
+ (name tezos_protocol_environment_poa)
+ (public_name tezos-protocol-poa.environment)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  custom-protocol-helper
+  tezos-protocol-environment)
+ (library_flags (:standard -linkall))
+ (modules Tezos_protocol_environment_poa))
+
+(rule
+ (targets tezos_protocol_environment_poa.ml)
+ (action
+  (write-file
+   %{targets}
+   "module Name = struct let name = \"poa\" end\ninclude Tezos_protocol_environment.V6.Make(Name)()\n")))
+
+
+(library
+ (name tezos_raw_protocol_poa)
+ (public_name tezos-protocol-poa.raw)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  ppx_deriving_encoding
+  tezos-protocol-poa.environment)
+ (library_flags (:standard -linkall))
+ (flags
+  (:standard)
+  -nostdlib
+  -nopervasives
+  -open Tezos_protocol_environment_poa
+  -open Tezos_protocol_environment_poa.Pervasives
+  -open Tezos_protocol_environment_poa.Error_monad)
+ (preprocess (pps ppx_deriving_encoding))
+ (modules
+   Account_repr
+Account_storage
+Block_header_repr
+Gas_limit_repr
+Helper_functor
+Main
+Manager_repr
+Path_encoding
+Saturation_repr
+Storage_costs
+Storage_description
+Storage_functors
+Storage_sigs
+Tez_repr
+  ))
+
+(library
+ (name tezos_protocol_poa)
+ (public_name tezos-protocol-poa)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-protocol-environment
+  tezos-protocol-environment.sigs
+  tezos-protocol-poa.raw)
+ (flags
+  (:standard)
+  -nopervasives)
+ (modules Protocol Tezos_protocol_poa))
+
+(install
+ (package tezos-protocol-poa)
+ (section lib)
+ (files (TEZOS_PROTOCOL as raw/TEZOS_PROTOCOL)))
+
+(rule
+ (targets protocol.ml)
+ (action
+  (write-file
+   %{targets}
+   "\nlet hash = Tezos_crypto.Protocol_hash.of_b58check_exn \"PtMiuQiwsBr33CWASTY6BsesRDKGbMkxfeaLuH8ANpfK9RtxbWw\"\nlet name = Tezos_protocol_environment_poa.Name.name\ninclude Tezos_raw_protocol_poa\ninclude Tezos_raw_protocol_poa.Main\n")))
+
+(rule
+ (targets tezos_protocol_poa.ml)
+ (action
+  (write-file
+   %{targets}
+   "\nmodule Environment = Tezos_protocol_environment_poa\nmodule Protocol = Protocol\n")))
+
+(rule
+ (alias runtest_compile_protocol)
+ (deps
+   account_repr.ml
+account_storage.ml
+block_header_repr.ml
+gas_limit_repr.ml
+helper_functor.ml
+main.ml
+manager_repr.ml
+path_encoding.ml
+saturation_repr.ml
+storage_costs.ml
+storage_description.ml
+storage_functors.ml
+storage_sigs.ml
+tez_repr.ml
+  (:src_dir TEZOS_PROTOCOL))
+ (action (run %{bin:octez-protocol-compiler} -no-hash-check -warn-error +a .)))
+
+(library
+ (name tezos_protocol_poa_functor)
+ (libraries
+  tezos-protocol-environment
+  tezos-protocol-environment.sigs)
+ (flags
+  (:standard)
+  -nopervasives)
+ (modules Functor))
+
+(rule
+ (targets functor.ml)
+ (deps
+   account_repr.ml
+account_storage.ml
+block_header_repr.ml
+gas_limit_repr.ml
+helper_functor.ml
+main.ml
+manager_repr.ml
+path_encoding.ml
+saturation_repr.ml
+storage_costs.ml
+storage_description.ml
+storage_functors.ml
+storage_sigs.ml
+tez_repr.ml
+ (:src_dir TEZOS_PROTOCOL))
+ (action
+  (with-stdout-to
+   %{targets}
+   (chdir
+    %{workspace_root}
+    (run %{bin:octez-protocol-compiler.octez-protocol-packer} %{src_dir})))))
+
+(library
+ (name tezos_embedded_protocol_poa)
+ (public_name tezos-embedded-protocol-poa)
+ (instrumentation (backend bisect_ppx))
+ (libraries
+  tezos-protocol-poa
+  tezos-protocol-updater
+  tezos-protocol-environment)
+ (library_flags (:standard -linkall))
+ (modules Registerer))
+
+(rule
+ (targets registerer.ml)
+ (deps
+   account_repr.ml
+account_storage.ml
+block_header_repr.ml
+gas_limit_repr.ml
+helper_functor.ml
+main.ml
+manager_repr.ml
+path_encoding.ml
+saturation_repr.ml
+storage_costs.ml
+storage_description.ml
+storage_functors.ml
+storage_sigs.ml
+tez_repr.ml
+  (:src_dir TEZOS_PROTOCOL))
+ (action
+  (with-stdout-to
+   %{targets}
+   (chdir
+    %{workspace_root}
+    (run %{bin:octez-embedded-protocol-packer} %{src_dir} poa)))))
+
+
+(env (_ 
+    (env-vars 
+        (PPX_ENCODING_DEBUG true)
+)))

@@ -1,11 +1,7 @@
 (*Assuming that there's no migration, besides from Genesis*)
 let prepare_first_block ctxt ~level ~timestamp :
-
     (Raw_context.t, error trace) result Lwt.t =
-
-  Logging.log Notice "Preparing first block storage: level: %s timestamp: %s" (Int32.to_string level) (Time.to_notation timestamp);
   Raw_context.prepare_first_block ctxt ~level ~timestamp
-
   >>=? fun (previous_protocol, ctxt) ->
   Raw_context.Cache.set_cache_layout ctxt [3] >>= fun ctxt ->
   match previous_protocol with
