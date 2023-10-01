@@ -1,48 +1,19 @@
-(*****************************************************************************)
-(*                                                                           *)
-(* Open Source License                                                       *)
-(* Copyright (c) 2018 Dynamic Ledger Solutions, Inc. <contact@tezos.com>     *)
-(*                                                                           *)
-(* Permission is hereby granted, free of charge, to any person obtaining a   *)
-(* copy of this software and associated documentation files (the "Software"),*)
-(* to deal in the Software without restriction, including without limitation *)
-(* the rights to use, copy, modify, merge, publish, distribute, sublicense,  *)
-(* and/or sell copies of the Software, and to permit persons to whom the     *)
-(* Software is furnished to do so, subject to the following conditions:      *)
-(*                                                                           *)
-(* The above copyright notice and this permission notice shall be included   *)
-(* in all copies or substantial portions of the Software.                    *)
-(*                                                                           *)
-(* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR*)
-(* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  *)
-(* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL   *)
-(* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER*)
-(* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING   *)
-(* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER       *)
-(* DEALINGS IN THE SOFTWARE.                                                 *)
-(*                                                                           *)
-(*****************************************************************************)
 type missing_key_kind = Get | Set | Del | Copy
 
 module Int_set = Set.Make (Compare.Int)
 
 type t = {
   context : Context.t;
-  constants : Constants_repr.parametric;
+  constants : Constants_repr.t;
   timestamp : Time.t;
   level : Int32.t;
   first_level : Int32.t;
+      (*Here you should define the "Protocol Context", that is, whatever information is used/updated during the processing of a block and operations*)
 }
 
 let[@inline] context ctxt = ctxt.context
 
 let[@inline] constants ctxt = ctxt.constants
-
-let[@inline] level ctxt = ctxt.level
-
-let[@inline] first_level ctxt = ctxt.first_level
-
-let[@inline] timestamp ctxt = ctxt.timestamp
 
 let[@inline] update_context ctxt context = {ctxt with context}
 
@@ -66,8 +37,7 @@ type error += Operation_quota_exceeded (* `Temporary *)
    protocol.  It's absence meaning that the context is empty. *)
 let version_key = ["version"]
 
-(* This value is set by the snapshot_alpha.sh script, don't change it. *)
-let version_value = "custom_protocol"
+let version_value = "protocol"
 
 let version = "v1"
 
@@ -78,7 +48,6 @@ let constants_key = [version; "constants"]
 let protocol_param_key = ["protocol_parameters"]
 
 let get_first_level ctxt =
-  Logging.log Notice "Getting first level" ;
   Context.find ctxt first_level_key >|= function
   | None -> storage_error (Missing_key (first_level_key, Get))
   | Some bytes -> (
@@ -449,10 +418,3 @@ module Cache = struct
     Context.Cache.future_cache_expectation (context c) ~time_in_blocks
     |> update_context c
 end
-
-let to_string ctxt =
-  "Ctxt(" ^ "Timestamp "
-  ^ Time.to_notation ctxt.timestamp
-  ^ "| Level " ^ Int32.to_string ctxt.level ^ "| first_level "
-  ^ Int32.to_string ctxt.first_level
-  ^ ")"

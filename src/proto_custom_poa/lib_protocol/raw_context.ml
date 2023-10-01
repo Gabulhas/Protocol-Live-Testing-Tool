@@ -1,27 +1,3 @@
-(*****************************************************************************)
-(*                                                                           *)
-(* Open Source License                                                       *)
-(* Copyright (c) 2018 Dynamic Ledger Solutions, Inc. <contact@tezos.com>     *)
-(*                                                                           *)
-(* Permission is hereby granted, free of charge, to any person obtaining a   *)
-(* copy of this software and associated documentation files (the "Software"),*)
-(* to deal in the Software without restriction, including without limitation *)
-(* the rights to use, copy, modify, merge, publish, distribute, sublicense,  *)
-(* and/or sell copies of the Software, and to permit persons to whom the     *)
-(* Software is furnished to do so, subject to the following conditions:      *)
-(*                                                                           *)
-(* The above copyright notice and this permission notice shall be included   *)
-(* in all copies or substantial portions of the Software.                    *)
-(*                                                                           *)
-(* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR*)
-(* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  *)
-(* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL   *)
-(* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER*)
-(* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING   *)
-(* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER       *)
-(* DEALINGS IN THE SOFTWARE.                                                 *)
-(*                                                                           *)
-(*****************************************************************************)
 type missing_key_kind = Get | Set | Del | Copy
 
 module Int_set = Set.Make (Compare.Int)
@@ -29,6 +5,7 @@ module Int_set = Set.Make (Compare.Int)
 type t = {
   context : Context.t;
   constants : Constants_repr.parametric;
+      (*Here you should define the "Protocol Context", that is, whatever information is used/updated during the processing of a block and operations*)
   timestamp : Time.t;
   level : Int32.t;
   first_level : Int32.t;
@@ -38,15 +15,13 @@ let[@inline] context ctxt = ctxt.context
 
 let[@inline] constants ctxt = ctxt.constants
 
-let[@inline] level ctxt = ctxt.level
-
-let[@inline] first_level ctxt = ctxt.first_level
-
 let[@inline] timestamp ctxt = ctxt.timestamp
 
 let[@inline] update_context ctxt context = {ctxt with context}
 
 let[@inline] update_constants ctxt constants = {ctxt with constants}
+
+let[@inline] level ctxt = ctxt.level
 
 type storage_error =
   | Incompatible_protocol_version of string
@@ -54,7 +29,90 @@ type storage_error =
   | Existing_key of string list
   | Corrupted_data of string list
 
+let storage_error_encoding =
+  let open Data_encoding in
+  union
+    [
+      case
+        (Tag 0)
+        ~title:"Incompatible_protocol_version"
+        (obj1 (req "incompatible_protocol_version" string))
+        (function Incompatible_protocol_version arg -> Some arg | _ -> None)
+        (fun arg -> Incompatible_protocol_version arg);
+      case
+        (Tag 1)
+        ~title:"Missing_key"
+        (obj2
+           (req "missing_key" (list string))
+           (req
+              "function"
+              (string_enum
+                 [("get", Get); ("set", Set); ("del", Del); ("copy", Copy)])))
+        (function Missing_key (key, f) -> Some (key, f) | _ -> None)
+        (fun (key, f) -> Missing_key (key, f));
+      case
+        (Tag 2)
+        ~title:"Existing_key"
+        (obj1 (req "existing_key" (list string)))
+        (function Existing_key key -> Some key | _ -> None)
+        (fun key -> Existing_key key);
+      case
+        (Tag 3)
+        ~title:"Corrupted_data"
+        (obj1 (req "corrupted_data" (list string)))
+        (function Corrupted_data key -> Some key | _ -> None)
+        (fun key -> Corrupted_data key);
+    ]
+
+let pp_storage_error ppf = function
+  | Incompatible_protocol_version version ->
+      Format.fprintf
+        ppf
+        "Found a context with an unexpected version '%s'."
+        version
+  | Missing_key (key, Get) ->
+      Format.fprintf ppf "Missing key '%s'." (String.concat "/" key)
+  | Missing_key (key, Set) ->
+      Format.fprintf
+        ppf
+        "Cannot set undefined key '%s'."
+        (String.concat "/" key)
+  | Missing_key (key, Del) ->
+      Format.fprintf
+        ppf
+        "Cannot delete undefined key '%s'."
+        (String.concat "/" key)
+  | Missing_key (key, Copy) ->
+      Format.fprintf
+        ppf
+        "Cannot copy undefined key '%s'."
+        (String.concat "/" key)
+  | Existing_key key ->
+      Format.fprintf
+        ppf
+        "Cannot initialize defined key '%s'."
+        (String.concat "/" key)
+  | Corrupted_data key ->
+      Format.fprintf
+        ppf
+        "Failed to parse the data at '%s'."
+        (String.concat "/" key)
+
 type error += Storage_error of storage_error
+
+let () =
+  register_error_kind
+    `Permanent
+    ~id:"context.storage_error"
+    ~title:"Storage error (fatal internal error)"
+    ~description:
+      "An error that should never happen unless something has been deleted or \
+       corrupted in the database."
+    ~pp:(fun ppf err ->
+      Format.fprintf ppf "@[<v 2>Storage error:@ %a@]" pp_storage_error err)
+    storage_error_encoding
+    (function Storage_error err -> Some err | _ -> None)
+    (fun err -> Storage_error err)
 
 let storage_error err = error (Storage_error err)
 
@@ -66,8 +124,7 @@ type error += Operation_quota_exceeded (* `Temporary *)
    protocol.  It's absence meaning that the context is empty. *)
 let version_key = ["version"]
 
-(* This value is set by the snapshot_alpha.sh script, don't change it. *)
-let version_value = "custom_protocol"
+let version_value = "protocol"
 
 let version = "v1"
 
@@ -78,7 +135,6 @@ let constants_key = [version; "constants"]
 let protocol_param_key = ["protocol_parameters"]
 
 let get_first_level ctxt =
-  Logging.log Notice "Getting first level" ;
   Context.find ctxt first_level_key >|= function
   | None -> storage_error (Missing_key (first_level_key, Get))
   | Some bytes -> (
@@ -179,11 +235,6 @@ let _check_inited ctxt =
       else storage_error (Incompatible_protocol_version s)
 
 let prepare ctxt ~level ~timestamp =
-  Logging.log
-    Notice
-    "prepare: Level %s | Timestamp %s"
-    (Int32.to_string level)
-    (Time.to_notation timestamp) ;
   get_first_level ctxt >>=? fun first_level ->
   get_constants ctxt >|=? fun constants ->
   {context = ctxt; constants; timestamp; level; first_level}
@@ -207,11 +258,6 @@ let check_and_update_protocol_version ctxt =
   ok (previous_proto, ctxt)
 
 let prepare_first_block ctxt ~level ~timestamp =
-  Logging.log
-    Notice
-    "prepare_first_block: %s %s"
-    (Int32.to_string level)
-    (Time.to_notation timestamp) ;
   check_and_update_protocol_version ctxt >>=? fun (previous_proto, ctxt) ->
   (match previous_proto with
   | Genesis param ->
@@ -325,7 +371,8 @@ let list ctxt ?offset ?length k = Context.list (context ctxt) ?offset ?length k
 let fold ?depth ctxt k ~order ~init ~f =
   Context.fold ?depth (context ctxt) k ~order ~init ~f
 
-let description = Storage_description.create ()
+let description : t Storage_description.desc_with_path =
+  Storage_description.create ()
 
 let config ctxt = Context.config (context ctxt)
 
@@ -449,10 +496,3 @@ module Cache = struct
     Context.Cache.future_cache_expectation (context c) ~time_in_blocks
     |> update_context c
 end
-
-let to_string ctxt =
-  "Ctxt(" ^ "Timestamp "
-  ^ Time.to_notation ctxt.timestamp
-  ^ "| Level " ^ Int32.to_string ctxt.level ^ "| first_level "
-  ^ Int32.to_string ctxt.first_level
-  ^ ")"

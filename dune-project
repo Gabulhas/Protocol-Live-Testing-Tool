@@ -234,4 +234,5 @@
 (package (name platform_thingy.platform_client) (allow_empty) )
 (package (name tezos-protocol-custom-poa));; ADDED BY BOOTSTRAPPER
 (package (name tezos-embedded-protocol-custom-poa))
+(package (name tezos-client-custom-poa))
        

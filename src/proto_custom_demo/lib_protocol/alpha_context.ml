@@ -89,9 +89,7 @@ let level = Raw_context.level
 
 let timestamp = Raw_context.timestamp
 
-
 module Cache = Cache_repr
-
 
 module Constants = struct
   include Constants_repr
@@ -99,18 +97,16 @@ module Constants = struct
   let all ctxt = all_of_parametric (constants ctxt)
 end
 
-
-
-let finalize ?commit_message:message (c : context) fitness : Updater.validation_result =
+let finalize ?commit_message:message (c : context) fitness :
+    Updater.validation_result =
   let context = Raw_context.context c in
   Logging.log
     Notice
     "FINALIZE: Message %s, Fitness/Level %s, Level %s, First_level %s"
     (match message with Some a -> a | None -> "NONE")
     (fitness |> List.map Bytes.to_string |> String.concat ",")
-    (Int32.to_string (level c)) 
-    (Raw_context.first_level c |> Int32.to_string) 
-    ;
+    (Int32.to_string (level c))
+    (Raw_context.first_level c |> Int32.to_string) ;
 
   {
     Updater.context;

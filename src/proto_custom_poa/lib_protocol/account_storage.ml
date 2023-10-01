@@ -265,3 +265,35 @@ let is_revealed c manager =
   | None -> return_false
   | Some (Manager_repr.Hash _) -> return_false
   | Some _ -> return_true
+
+let initialize_votes_for_candidate_if_needed c candidate =
+  Storage.Account.Votes.find c candidate >>=? fun opt ->
+  match opt with
+  | None -> Storage.Account.Votes.update c candidate []
+  | Some _ -> Lwt.return (ok c)
+
+let add_new_vote_to_account c (new_vote : Vote_repr.vote) =
+  let candidate = new_vote.candidate in
+  let vote_author = new_vote.stored_action.endorser in
+
+  let update_if_exists (current_votes : Vote_repr.stored_action list) =
+    let rec aux (l : Vote_repr.stored_action list) =
+      match l with
+      | [] -> [new_vote.stored_action]
+      | hd :: tl ->
+          if Account_repr.equal hd.endorser vote_author then
+            new_vote.stored_action :: tl
+          else hd :: aux tl
+    in
+    aux current_votes
+  in
+
+  initialize_if_needed c candidate >>=? fun c ->
+  initialize_votes_for_candidate_if_needed c candidate >>=? fun c ->
+  Storage.Account.Votes.get c candidate >>=? fun current_votes ->
+  let new_vote_set = update_if_exists current_votes in
+  Storage.Account.Votes.update c candidate new_vote_set
+
+let get_vote_set c candidate =
+  initialize_votes_for_candidate_if_needed c candidate >>=? fun c ->
+  Storage.Account.Votes.get c candidate

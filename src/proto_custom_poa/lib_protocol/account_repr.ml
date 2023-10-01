@@ -42,6 +42,8 @@ let pp_short ppf = Signature.Public_key_hash.pp_short ppf
 let encoding =
   Data_encoding.def "AccountHash" Signature.Public_key_hash.encoding
 
+let zero = Signature.Public_key_hash.zero
+
 (* Renamed exports. *)
 
 let of_b58data = contract_of_b58data
@@ -81,3 +83,7 @@ module Index = struct
 
   let compare = compare
 end
+
+let authority_list_encoding = Data_encoding.list encoding
+
+let to_bytes = Signature.Public_key_hash.to_bytes

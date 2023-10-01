@@ -8,10 +8,6 @@ let metric_routes =
         first_and_last_block_times ());
     Dream.get "/blocks-per-second" (fun _ -> blocks_per_second ());
     Dream.get "/discarded-blocks" (fun _ -> discarded_blocks ());
-    Dream.get "/error-rate" (fun _ -> Dream.html "")
-    (* Rate of failed transactions or consensus failures.*);
-    Dream.get "/tx-pool" (fun _ -> Dream.html "")
-    (* Current size and rate of the transaction pool.*);
     Dream.get "/custom-metric/:metric" (fun _ -> Dream.html "");
   ]
 
@@ -34,7 +30,6 @@ let main_routes =
     (* Get the mockup parameters from the protocol_folder.*)
     Dream.get "/protocols" (fun _ -> available_protocols ());
     (* Returns the name, hash and path of available protocols *)
-    Dream.post "/swap-protocol" (fun request -> swap_protocol_handler request);
     Dream.post "/change-parameters" (fun request -> change_parameters request);
     Dream.get "/nodes" (fun _ -> nodes_handler ()) (*Gets info about the nodes*);
     Dream.get "/start_node/:id" (fun request ->

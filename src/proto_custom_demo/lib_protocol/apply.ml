@@ -218,13 +218,9 @@ let begin_partial_application ctxt (block_header : Alpha_context.Block_header.t)
 
 let begin_construction ctxt current_timestamp
     (protocol_data : Alpha_context.Block_header.protocol_data): (t, error trace) result Lwt.t =
-  calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp
-  >>=? fun (current_target, ctxt) ->
-      calculate_current_reward ctxt (level ctxt) 
-      >>=? fun current_reward ->
-          credit_miner ctxt protocol_data.miner current_reward 
-  >>=? fun ctxt ->
-      check_same_target protocol_data.target current_target 
-  >|=? fun () -> ctxt
+  calculate_current_target ctxt (Raw_context.level ctxt) current_timestamp >>=? fun (current_target, ctxt) ->
+  calculate_current_reward ctxt (level ctxt) >>=? fun current_reward ->
+  credit_miner ctxt protocol_data.miner current_reward >>=? fun ctxt ->
+  check_same_target protocol_data.target current_target >|=? fun () -> ctxt
 
 let value_of_key ctxt k = Alpha_context.Cache.Admin.value_of_key ctxt k

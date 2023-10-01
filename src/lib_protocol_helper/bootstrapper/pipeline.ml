@@ -5,6 +5,8 @@ let template_dir = "src/lib_protocol_helper/template/"
 
 let lib_protocol_suffix = "lib_protocol"
 
+let protocol_info_suffix = "protocol_info"
+
 let templates_suffix = "TEMPLATES"
 
 let generate_protocol_hash name = Protocol_hash.hash_string [name]
@@ -33,6 +35,7 @@ let pipeline (protocol_name, protocol_env_version, _use_lib_protocol_template) =
   copy_to_new_dir "" ;
   copy_to_new_dir lib_protocol_suffix ;
   copy_to_new_dir templates_suffix ;
+  copy_to_new_dir protocol_info_suffix ;
 
   append_to_file
     "dune-project"
