@@ -3,7 +3,8 @@ open Operation
 
 type error += (* `Permanent *) ProposerNotAValidator of Account_repr.t
 
-type error += (* `Permanent *) ProposeInWrongRound of Account_repr.t * Int32.t
+type error +=
+  | (* `Permanent *) ProposeInWrongRound of Account_repr.t * Int32.t * Int64.t
 
 type error += (* `Permanent *) InconsistentSignature
 
@@ -36,17 +37,22 @@ let () =
     ~id:"block.propose_in_wrong_round"
     ~title:"Propose in Wrong Round"
     ~description:"The proposer attempted to propose in the wrong round."
-    ~pp:(fun ppf (acc, round) ->
+    ~pp:(fun ppf (acc, round, skips) ->
       Format.fprintf
         ppf
-        "The proposer %s attempted to propose in round %s."
+        "The proposer %s attempted to propose in round %s and skipped %s times."
         (Account_repr.to_b58check acc)
-        (Int32.to_string round))
+        (Int32.to_string round)
+        (Int64.to_string skips))
     Data_encoding.(
-      obj2 (req "account" Account_repr.encoding) (req "round" int32))
+      obj3
+        (req "account" Account_repr.encoding)
+        (req "round" int32)
+        (req "skips" int64))
     (function
-      | ProposeInWrongRound (acc, round) -> Some (acc, round) | _ -> None)
-    (fun (acc, round) -> ProposeInWrongRound (acc, round)) ;
+      | ProposeInWrongRound (acc, round, skips) -> Some (acc, round, skips)
+      | _ -> None)
+    (fun (acc, round, skips) -> ProposeInWrongRound (acc, round, skips)) ;
 
   (* InconsistentSignature *)
   register_error_kind
@@ -202,26 +208,40 @@ let authority_list_equals_validator_set ctxt
 
 let is_within_tolerance ctxt level (predecessor_timestamp : Time.t)
     (current_timestamp : Time.t) =
+  Logging.log
+    Logging.Notice
+    "Checking time tolerance. Level: %s, Predecessor Time: %s, Current Time: %s"
+    (Int32.to_string level)
+    (Time.to_seconds predecessor_timestamp |> Int64.to_string)
+    (Time.to_seconds current_timestamp |> Int64.to_string) ;
+
   let constants = Alpha_context.constants ctxt in
   let tolerance = constants.tolerance in
   let block_time = constants.block_time in
-  let expected_timestamp =
-    Time.add predecessor_timestamp (Time.to_seconds block_time)
+  let lower_bound, expected, upper_bound =
+    Round_selection.get_block_time_bounds
+      predecessor_timestamp
+      block_time
+      tolerance
   in
-  let lower_bound = Time.diff expected_timestamp tolerance in
-  let upper_bound = Time.add expected_timestamp (Time.to_seconds tolerance) in
+
+  Logging.log
+    Logging.Notice
+    "Expected Timestamp: %s, Lower Bound: %s, Upper Bound: %s"
+    (Time.to_seconds expected |> Int64.to_string)
+    (lower_bound |> Int64.to_string)
+    (Time.to_seconds upper_bound |> Int64.to_string) ;
+
   if
     Time.(
       current_timestamp < Time.of_seconds lower_bound
       || current_timestamp > upper_bound)
-  then BlockSkippedOrTooSoon (level, current_timestamp) |> fail
-  else Lwt.return (ok ())
-
-let calculate_skips current_timestamp predecessor_timestamp block_time tolerance
-    =
-  let time_difference = Int64.sub current_timestamp predecessor_timestamp in
-  let interval = Int64.add block_time tolerance in
-  Int64.div time_difference interval
+  then (
+    Logging.log Logging.Notice "Block time out of tolerance. Failing." ;
+    BlockSkippedOrTooSoon (level, current_timestamp) |> fail)
+  else (
+    Logging.log Logging.Notice "Block time within tolerance. Proceeding." ;
+    Lwt.return (ok ()))
 
 let is_validator_the_current_proposer ctxt proposer validators round
     (current_timestamp : Time.t) (predecessor_timestamp : Time.t) =
@@ -229,7 +249,7 @@ let is_validator_the_current_proposer ctxt proposer validators round
   let tolerance = constants.tolerance |> Time.to_seconds in
   let block_time = constants.block_time |> Time.to_seconds in
   let skips =
-    calculate_skips
+    Round_selection.calculate_skips
       (current_timestamp |> Time.to_seconds)
       (predecessor_timestamp |> Time.to_seconds)
       block_time
@@ -242,7 +262,7 @@ let is_validator_the_current_proposer ctxt proposer validators round
       round
       skips
   then Lwt.return (ok ())
-  else fail (ProposeInWrongRound (proposer, round))
+  else fail (ProposeInWrongRound (proposer, round, skips))
 
 let begin_application ctxt chain_id
     (block_header : Alpha_context.Block_header.t) predecessor_timestamp

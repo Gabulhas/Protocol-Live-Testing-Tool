@@ -5,8 +5,8 @@
                "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU",
                "tz1ddb9NMYHZi5UzPdzTZMYQQZoMub195zgv"
         ],
-          "tolerance" : "120",
-          "block_time" : "90",
+          "tolerance" : "100",
+          "block_time" : "600",
           "validator_initial_reward" : "1000000000000"
         }
 }

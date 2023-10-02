@@ -68,6 +68,15 @@ type validation_mode =
   | Full_construction of {protocol_data : block_header_data}
   | Application of {protocol_data : block_header_data}
 
+let mode_to_string = function
+  | Partial_application -> "Partial_application"
+  | Partial_construction -> "Partial_construction"
+  | Full_construction {protocol_data} ->
+      "Construction " ^ Block_header_repr.protocol_data_to_string protocol_data
+  | Application {protocol_data} ->
+      "Partial_application "
+      ^ Block_header_repr.protocol_data_to_string protocol_data
+
 (*
 Not necessarily enforced, but you may want to include a validation mode in validation state including info about the current validation mode you are performing (either being Application, Partial application, Construction, etc) 
  *)

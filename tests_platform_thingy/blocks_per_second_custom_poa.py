@@ -11,17 +11,28 @@ import sys
 
 from utils import *
 
-MINER_ADD = "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU"
-OTHER_ADD = "tz1ddb9NMYHZi5UzPdzTZMYQQZoMub195zgv"
+
+def start_validator(node, validator_address):
+    subprocess.run(["./octez-client", "--endpoint", "http://127.0.0.1:" + str(node["rpc"]),
+                   "reveal", "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU"])
+
+    subprocess.Popen(
+        ["./octez-baker-custom-poa", "-endpoint", f"http://localhost:{node['rpc']}",
+         "run", validator_address],
+    )
 
 
 async def test():
     blocks_to_wait = 5
     protocol_name = "poa"
     parameters = get_protocol_parameters(protocol_name)
-    number_of_nodes = 3
+
+    number_of_nodes = 5
     fitness = 0
 
+    initial_validators = parameters["constants"]["initial_validator_set"]
+
+    assert len(initial_validators) <= number_of_nodes
     start_test_response = start_test(
         protocol_name, number_of_nodes, 0, parameters)
 
@@ -33,10 +44,14 @@ async def test():
         sleep(2)
 
     nodes = get_nodes()
+
     print(nodes)
 
-    target_node = nodes[0]
+    for i in range(len(initial_validators)):
+        start_validator(nodes[i], initial_validators[i])
 
+    shuffle(nodes)
+    target_node = nodes[0]
     async with aiohttp.ClientSession() as session:
         tasks = [show_heads(session, target_node)]
 

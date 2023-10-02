@@ -26,6 +26,9 @@
 open Protocol
 module Commands = Client_proto_commands
 
+let validators_to_string l =
+  String.concat ", " (List.map Account_repr.to_b58check l)
+
 let commands : Protocol_client_context.full Tezos_clic.command list =
   let open Tezos_clic in
   let open Client_proto_args in
@@ -57,14 +60,38 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
         cctxt#message "Balance: %sꜩ" r_string >>= fun () -> return_unit);
     command
       ~group
-      ~desc:"Shows current target."
+      ~desc:"Shows order of validators at a given block level."
       no_options
-      (prefixes ["target"] @@ stop)
+      (prefixes ["validator_order"]
+      @@ level_param ~name:"level" ~desc:"Block level"
+      @@ stop)
+      (fun () level cctxt ->
+        Commands.validator_order_at_level cctxt level >>=? fun validators ->
+        (* Assume a function that converts validators to string *)
+        let validators_str = validators_to_string validators in
+        cctxt#message "Validator Order: %s" validators_str >>= fun () ->
+        return_unit);
+    command
+      ~group
+      ~desc:"Shows set of current validators."
+      no_options
+      (prefixes ["validator_set"] @@ stop)
       (fun () cctxt ->
-        Commands.get_current_target cctxt >>=? fun current_target ->
-        cctxt#message
-          "Target: %s"
-          (Target_repr.to_hex current_target |> function `Hex h -> h)
+        Commands.validator_set cctxt >>=? fun validators ->
+        let validators_str = validators_to_string validators in
+        cctxt#message "Validator Set: %s" validators_str >>= fun () ->
+        return_unit);
+    command
+      ~group
+      ~desc:"Shows first validator for next block height."
+      no_options
+      (prefixes ["first_block_validator"]
+      @@ level_param ~name:"level" ~desc:"Block level"
+      @@ stop)
+      (fun () level cctxt ->
+        Commands.first_block_validator cctxt level >>=? fun first_validator ->
+        let first_validator_str = Account_repr.to_b58check first_validator in
+        cctxt#message "First Block Validator: %s" first_validator_str
         >>= fun () -> return_unit);
     command
       ~group

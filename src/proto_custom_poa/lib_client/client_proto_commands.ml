@@ -27,6 +27,43 @@ open Protocol
 open Protocol_client_context
 module Receipt = Receipt_repr
 
+let validator_order_at_level (cctxt : Protocol_client_context.full) level =
+  Services.PoAServices.Commands.validator_order_at_level
+    cctxt
+    (cctxt#chain, cctxt#block)
+    level
+  >>=? fun order -> return order
+
+let skips_at_timestamp (cctxt : Protocol_client_context.full) previous_timestamp
+    current_timestamp =
+  Services.PoAServices.Commands.skips_at_timestamp
+    cctxt
+    (cctxt#chain, cctxt#block)
+    previous_timestamp
+    current_timestamp
+  >>=? fun skips -> return skips
+
+let first_block_validator (cctxt : Protocol_client_context.full) level =
+  Services.PoAServices.Commands.first_block_validator
+    cctxt
+    (cctxt#chain, cctxt#block)
+    level
+  >>=? fun validator -> return validator
+
+let expected_validator (cctxt : Protocol_client_context.full) level
+    previous_timestamp current_timestamp =
+  Services.PoAServices.Commands.expected_validator
+    cctxt
+    (cctxt#chain, cctxt#block)
+    level
+    previous_timestamp
+    current_timestamp
+  >>=? fun validator -> return validator
+
+let validator_set (cctxt : Protocol_client_context.full) =
+  Services.PoAServices.Commands.validator_set cctxt (cctxt#chain, cctxt#block)
+  >>=? fun set -> return set
+
 let get_balance (cctxt : Protocol_client_context.full) account =
   Services.AccountServices.Commands.get_balance
     cctxt
@@ -34,26 +71,19 @@ let get_balance (cctxt : Protocol_client_context.full) account =
     account
   >>=? fun cnt -> return cnt
 
-let get_current_target (cctxt : Protocol_client_context.full) =
-  Services.ContextServices.Commands.current_target
-    cctxt
-    (cctxt#chain, cctxt#block)
-  >>=? fun target -> return target
-
-let get_next_target (cctxt : Protocol_client_context.full) level timestamp =
-  Services.ContextServices.Commands.next_target
-    cctxt
-    (cctxt#chain, cctxt#block)
-    level
-    timestamp
-  >>=? fun target -> return target
-
 let get_current_counter (cctxt : Protocol_client_context.full) account =
   Services.AccountServices.Commands.get_counter
     cctxt
     (cctxt#chain, cctxt#block)
     account
   >>=? fun cnt -> return cnt
+
+let fetch_all_constants (cctxt : Protocol_client_context.full) () =
+  Services.ConstantServices.Commands.fetch_all_constants
+    cctxt
+    (cctxt#chain, cctxt#block)
+    ()
+  >>=? fun constants -> return constants
 
 let get_new_counter (cctxt : Protocol_client_context.full) account =
   Services.AccountServices.Commands.get_counter

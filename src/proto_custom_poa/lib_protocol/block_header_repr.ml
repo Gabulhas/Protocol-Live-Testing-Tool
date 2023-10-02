@@ -8,7 +8,6 @@ type error +=
 
 type contents = {
   validator : Account_repr.t; [@encoding Account_repr.encoding]
-  signature : Signature.t option;
   authority_list : Account_repr.t list;
       [@encoding Account_repr.authority_list_encoding]
   vote : Vote_repr.t option;
@@ -18,13 +17,18 @@ type contents = {
 type protocol_data = {contents : contents; signature : Signature.t}
 [@@deriving encoding]
 
+let contents_to_string p =
+  "| Validator: "
+  ^ Account_repr.to_b58check p.validator
+  ^ "| Authority_list: "
+  ^ String.concat "," (List.map Account_repr.to_b58check p.authority_list)
+  ^ "| Vote: "
+
+let protocol_data_to_string p =
+  Signature.to_b58check p.signature ^ "," ^ contents_to_string p.contents
+
 let fake_contents =
-  {
-    validator = Account_repr.zero;
-    signature = None;
-    authority_list = [];
-    vote = None;
-  }
+  {validator = Account_repr.zero; authority_list = []; vote = None}
 
 let fake_protocol_data = {contents = fake_contents; signature = Signature.zero}
 

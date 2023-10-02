@@ -12,7 +12,7 @@ type error += Forbidden_Negative_int of string
 let () =
   register_error_kind
     `Permanent
-    ~id:"badTezArg"
+    ~id:"poa.badTezArg"
     ~title:"Bad Tez Arg"
     ~description:"Invalid \xEA\x9C\xA9 notation in parameter."
     ~pp:(fun ppf (arg_name, literal) ->
@@ -28,7 +28,7 @@ let () =
     (fun (parameter, literal) -> Bad_tez_arg (parameter, literal)) ;
   register_error_kind
     `Permanent
-    ~id:"InvalidAccountNotation"
+    ~id:"poa.InvalidAccountNotation"
     ~title:"Invalid Account Notation"
     ~description:"Invalid account notation in parameter."
     ~pp:(fun ppf (arg_name, literal) ->
@@ -45,7 +45,7 @@ let () =
     (fun (parameter, literal) -> Invalid_account_notation (parameter, literal)) ;
   register_error_kind
     `Permanent
-    ~id:"ForbiddenNegativeInt"
+    ~id:"poa.ForbiddenNegativeInt"
     ~title:"Forbidden negative int"
     ~description:"invalid number, must a non negative natural "
     Data_encoding.(obj1 (req "invalid_natural" string))
@@ -152,3 +152,15 @@ let counter_arg : (Z.t option, 'a) Tezos_clic.arg =
     ~placeholder:"counter"
     ~doc:"Set the counter to be used by the transaction"
     non_negative_z_parameter
+
+let level_format =
+  "A non-negative 32-bit integer number representing the block level."
+
+let level_parameter param =
+  Tezos_clic.parameter (fun _ s ->
+      match Int32.of_string_opt s with
+      | Some level when level >= 0l -> return level
+      | _ -> fail (Bad_positive_number_arg (param, s)))
+
+let level_param ~name ~desc next =
+  Tezos_clic.param ~name ~desc (level_parameter name) next

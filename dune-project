@@ -235,4 +235,6 @@
 (package (name tezos-protocol-custom-poa));; ADDED BY BOOTSTRAPPER
 (package (name tezos-embedded-protocol-custom-poa))
 (package (name tezos-client-custom-poa))
+(package (name octez-baker-custom-poa))
+(package (name tezos-baker-lib-custom-poa))
        

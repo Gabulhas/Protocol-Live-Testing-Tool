@@ -31,6 +31,10 @@
      (tezos-client-custom-demo -> void_for_linking-tezos-client-custom-demo.empty)
      (-> void_for_linking-tezos-client-custom-demo.empty))
 
+  (select void_for_linking-tezos-client-custom-poa from
+     (tezos-client-custom-poa -> void_for_linking-tezos-client-custom-poa.empty)
+     (-> void_for_linking-tezos-client-custom-poa.empty))
+
   (select void_for_linking-tezos-client-000-Ps9mPmXa from
    (tezos-client-000-Ps9mPmXa -> void_for_linking-tezos-client-000-Ps9mPmXa.empty)
    (-> void_for_linking-tezos-client-000-Ps9mPmXa.empty))
