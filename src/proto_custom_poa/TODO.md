@@ -5,5 +5,7 @@ Validators should be initialized with money
 
 Ver aquela cena dos parameters dos protocolos normais da tezos
 
+ver porque é que o time to wait do baker é igua a block_time + tolerance
+skipping não está a dar :)
 
 remover as cenas de "endpoints standard" dos protocolos, visto que não dá para os obter

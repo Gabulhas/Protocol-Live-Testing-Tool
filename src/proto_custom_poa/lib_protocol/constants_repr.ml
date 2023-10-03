@@ -1,8 +1,13 @@
 let version_number = "\001"
 
+type validator_pair = {
+  address : Account_repr.t;
+  public_key : Signature.Public_key.t;
+}
+[@@deriving encoding]
+
 type parametric = {
-  initial_validator_set : Account_repr.t list;
-      [@encoding Account_repr.authority_list_encoding]
+  initial_validator_set : validator_pair list;
   tolerance : Time.t;
   block_time : Time.t;
   validator_initial_reward : Tez_repr.t;

@@ -13,8 +13,6 @@ from utils import *
 
 
 def start_validator(node, validator_address):
-    subprocess.run(["./octez-client", "--endpoint", "http://127.0.0.1:" + str(node["rpc"]),
-                   "reveal", "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU"])
 
     subprocess.Popen(
         ["./octez-baker-custom-poa", "-endpoint", f"http://localhost:{node['rpc']}",
@@ -48,7 +46,7 @@ async def test():
     print(nodes)
 
     for i in range(len(initial_validators)):
-        start_validator(nodes[i], initial_validators[i])
+        start_validator(nodes[i], initial_validators[i]["address"])
 
     shuffle(nodes)
     target_node = nodes[0]

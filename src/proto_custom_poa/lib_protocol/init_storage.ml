@@ -1,10 +1,20 @@
-let reward_inital_set ctxt validator_set reward =
+open Constants_repr
+
+type error += FailedToCreateAccount
+
+let init_and_reward_initial_set ctxt validator_set reward =
   let rec aux current_ctxt l =
     match l with
-    | [] -> Lwt.return (ok current_ctxt)
-    | hd :: tl ->
-        Account_storage.create_account ctxt hd ~balance:reward >>=? fun ctxt ->
-        aux ctxt tl
+    | [] -> Lwt.return (Ok current_ctxt)
+    | hd :: tl -> (
+        Account_storage.create_account current_ctxt hd.address ~balance:reward
+        >>= function
+        | Ok new_ctxt -> (
+            Account_storage.reveal_manager_key new_ctxt hd.address hd.public_key
+            >>= function
+            | Ok final_ctxt -> aux final_ctxt tl
+            | Error _ -> fail FailedToCreateAccount)
+        | Error _ -> fail FailedToCreateAccount)
   in
   aux ctxt validator_set
 
@@ -23,10 +33,10 @@ let prepare_first_block ctxt ~level ~timestamp :
       Logging.(log Debug "Initialized Account Storage") ;
       Validator_set_storage.init_with_initial_set
         ctxt
-        params.constants.initial_validator_set
+        (List.map (fun v -> v.address) params.constants.initial_validator_set)
       >>=? fun ctxt ->
       Logging.(log Debug "Initialized Validator Set Storage") ;
-      reward_inital_set
+      init_and_reward_initial_set
         ctxt
         params.constants.initial_validator_set
         params.constants.validator_initial_reward

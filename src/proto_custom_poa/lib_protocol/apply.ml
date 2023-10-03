@@ -4,7 +4,9 @@ open Operation
 type error += (* `Permanent *) ProposerNotAValidator of Account_repr.t
 
 type error +=
-  | (* `Permanent *) ProposeInWrongRound of Account_repr.t * Int32.t * Int64.t
+  | (* `Permanent *)
+      ProposeInWrongRound of
+      Account_repr.t * Int32.t * Int64.t * Account_repr.t
 
 type error += (* `Permanent *) InconsistentSignature
 
@@ -37,22 +39,27 @@ let () =
     ~id:"block.propose_in_wrong_round"
     ~title:"Propose in Wrong Round"
     ~description:"The proposer attempted to propose in the wrong round."
-    ~pp:(fun ppf (acc, round, skips) ->
+    ~pp:(fun ppf (acc, round, skips, expected) ->
       Format.fprintf
         ppf
-        "The proposer %s attempted to propose in round %s and skipped %s times."
+        "The proposer %s attempted to propose in round %s and skipped %s \
+         times. %s was expected."
         (Account_repr.to_b58check acc)
         (Int32.to_string round)
-        (Int64.to_string skips))
+        (Int64.to_string skips)
+        (Account_repr.to_b58check expected))
     Data_encoding.(
-      obj3
+      obj4
         (req "account" Account_repr.encoding)
         (req "round" int32)
-        (req "skips" int64))
+        (req "skips" int64)
+        (req "expected" Account_repr.encoding))
     (function
-      | ProposeInWrongRound (acc, round, skips) -> Some (acc, round, skips)
+      | ProposeInWrongRound (acc, round, skips, expected) ->
+          Some (acc, round, skips, expected)
       | _ -> None)
-    (fun (acc, round, skips) -> ProposeInWrongRound (acc, round, skips)) ;
+    (fun (acc, round, skips, expected) ->
+      ProposeInWrongRound (acc, round, skips, expected)) ;
 
   (* InconsistentSignature *)
   register_error_kind
@@ -220,6 +227,7 @@ let is_within_tolerance ctxt level (predecessor_timestamp : Time.t)
   let block_time = constants.block_time in
   let lower_bound, expected, upper_bound =
     Round_selection.get_block_time_bounds
+      current_timestamp
       predecessor_timestamp
       block_time
       tolerance
@@ -228,14 +236,14 @@ let is_within_tolerance ctxt level (predecessor_timestamp : Time.t)
   Logging.log
     Logging.Notice
     "Expected Timestamp: %s, Lower Bound: %s, Upper Bound: %s"
-    (Time.to_seconds expected |> Int64.to_string)
+    (expected |> Int64.to_string)
     (lower_bound |> Int64.to_string)
-    (Time.to_seconds upper_bound |> Int64.to_string) ;
+    (upper_bound |> Int64.to_string) ;
 
   if
     Time.(
       current_timestamp < Time.of_seconds lower_bound
-      || current_timestamp > upper_bound)
+      || current_timestamp > Time.of_seconds upper_bound)
   then (
     Logging.log Logging.Notice "Block time out of tolerance. Failing." ;
     BlockSkippedOrTooSoon (level, current_timestamp) |> fail)
@@ -248,21 +256,43 @@ let is_validator_the_current_proposer ctxt proposer validators round
   let constants = Alpha_context.constants ctxt in
   let tolerance = constants.tolerance |> Time.to_seconds in
   let block_time = constants.block_time |> Time.to_seconds in
-  let skips =
-    Round_selection.calculate_skips
-      (current_timestamp |> Time.to_seconds)
-      (predecessor_timestamp |> Time.to_seconds)
+  let current_timestamp = current_timestamp |> Time.to_seconds in
+  let predecessor_timestamp = predecessor_timestamp |> Time.to_seconds in
+  let expected_validator_opt =
+    Round_selection.get_validator
+      validators
+      round
+      current_timestamp
+      predecessor_timestamp
       block_time
       tolerance
   in
-  if
-    Round_selection.is_validator_the_current_proposer
-      proposer
-      validators
-      round
-      skips
-  then Lwt.return (ok ())
-  else fail (ProposeInWrongRound (proposer, round, skips))
+  let expected_validator =
+    match expected_validator_opt with None -> Account_repr.zero | Some a -> a
+  in
+
+  if Account_repr.equal expected_validator proposer then Lwt.return (ok ())
+  else
+    let skips =
+      Round_selection.calculate_skips
+        current_timestamp
+        predecessor_timestamp
+        block_time
+        tolerance
+    in
+    fail
+      (ProposeInWrongRound
+         ( proposer,
+           round,
+           skips,
+           match
+             Round_selection.expected_validator_address_with_skips
+               validators
+               round
+               skips
+           with
+           | Some a -> a
+           | None -> Account_repr.zero ))
 
 let begin_application ctxt chain_id
     (block_header : Alpha_context.Block_header.t) predecessor_timestamp
@@ -282,9 +312,8 @@ let begin_application ctxt chain_id
     predecessor_timestamp
   >>=? fun _ ->
   check_block_signature ctxt chain_id block_header >>=? fun _ ->
-  authority_list_equals_validator_set ctxt block_header >>=? fun _ ->
-  is_within_tolerance ctxt level predecessor_timestamp current_timestamp
-  >|=? fun _ -> ctxt
+  (*is_within_tolerance ctxt level predecessor_timestamp current_timestamp >>=? fun _ ->*)
+  authority_list_equals_validator_set ctxt block_header >|=? fun _ -> ctxt
 
 (*Check if the node is actually the one baking*)
 (*Check if the signature is valid*)
@@ -306,9 +335,10 @@ let begin_partial_application ctxt chain_id
     current_round
     current_timestamp
     predecessor_timestamp
-  >>=? fun _ ->
-  is_within_tolerance ctxt level predecessor_timestamp current_timestamp
-  >>=? fun _ ->
+  (*>>=? fun _ ->
+    is_within_tolerance ctxt level predecessor_timestamp current_timestamp*)
+  >>=?
+  fun _ ->
   check_block_signature ctxt chain_id block_header >|=? fun _ -> ctxt
 
 let begin_construction ctxt
@@ -325,9 +355,10 @@ let begin_construction ctxt
     current_round
     current_timestamp
     predecessor_timestamp
-  >>=? fun _ ->
-  is_within_tolerance ctxt level predecessor_timestamp current_timestamp
-  >|=? fun _ -> ctxt
+  (*>>=? fun _ ->
+    is_within_tolerance ctxt level predecessor_timestamp current_timestamp*)
+  >|=?
+  fun _ -> ctxt
 
 (* *)
 let value_of_key ctxt k = Alpha_context.Cache.Admin.value_of_key ctxt k

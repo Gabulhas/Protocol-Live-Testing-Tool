@@ -2,11 +2,17 @@
     "constants": 
         {
          "initial_validator_set" : [
-               "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU",
-               "tz1ddb9NMYHZi5UzPdzTZMYQQZoMub195zgv"
+               {
+                  "address" : "tz1faswCTDciRzE4oJ9jn2Vm2dvjeyA9fUzU",
+                  "public_key": "edpkuTXkJDGcFd5nh6VvMz8phXxU3Bi7h6hqgywNFi1vZTfQNnS1RV"
+               },
+               {
+                  "address" : "tz1ddb9NMYHZi5UzPdzTZMYQQZoMub195zgv",
+                  "public_key" : "edpkv8EUUH68jmo3f7Um5PezmfGrRF24gnfLpH3sVNwJnV5bVCxL2n"
+               }
         ],
-          "tolerance" : "100",
-          "block_time" : "600",
+          "tolerance" : "10",
+          "block_time" : "40",
           "validator_initial_reward" : "1000000000000"
         }
 }

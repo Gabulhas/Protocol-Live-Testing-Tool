@@ -90,7 +90,11 @@ let commands : Protocol_client_context.full Tezos_clic.command list =
       @@ stop)
       (fun () level cctxt ->
         Commands.first_block_validator cctxt level >>=? fun first_validator ->
-        let first_validator_str = Account_repr.to_b58check first_validator in
+        let first_validator_str =
+          match first_validator with
+          | None -> "NONE"
+          | Some a -> Account_repr.to_b58check a
+        in
         cctxt#message "First Block Validator: %s" first_validator_str
         >>= fun () -> return_unit);
     command

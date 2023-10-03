@@ -95,7 +95,7 @@ let init_node ?(peer_list = "") ?(node_dir = "") id port rpc metrics n_nodes =
   in
   let run_command =
     Printf.sprintf
-      {|%s run --metrics-addr=:%d --synchronisation-threshold 0 --network "sandbox" --data-dir "%s" %s --sandbox="./scripts/sandbox.json" |}
+      {|%s run --metrics-addr=:%d --synchronisation-threshold 0 --network "sandbox" --data-dir "%s" %s --sandbox="./scripts/sandbox.json"|}
       octez_node
       metrics
       node_dir

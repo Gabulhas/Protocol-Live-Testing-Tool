@@ -119,9 +119,9 @@ module PoAServices = struct
   (* Service to return first validator of next block height *)
   let first_block_validator =
     RPC_service.get_service
-      ~description:"First validator of next block height"
+      ~description:"First validator of specific block height"
       ~query:RPC_query.empty
-      ~output:Account_repr.encoding
+      ~output:(Data_encoding.option Account_repr.encoding)
       RPC_path.(custom_root / "first_block_validator" /: Raw_level_repr.rpc_arg)
 
   (* Service to return expected validator given level and timestamp *)
@@ -185,7 +185,12 @@ module PoAServices = struct
           tolerance) ;
 
     register0 ~chunked:false validator_set (fun ctxt () () ->
-        Validator_set_storage.get_validator_set ctxt)
+        Validator_set_storage.get_validator_set ctxt) ;
+
+    register1 ~chunked:false first_block_validator (fun ctxt level () () ->
+        Validator_set_storage.get_validator_set ctxt >|=? fun validators ->
+        Round_selection.sort_validators_by_hash_as_addresses validators level
+        |> List.hd)
 
   module Commands = struct
     let validator_order_at_level rpc_ctxt chain_blk level =
