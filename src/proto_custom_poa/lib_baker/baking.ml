@@ -114,13 +114,13 @@ let baking_worker (cctxt : Protocol_client_context.full) state validator =
     >>= fun () -> return ()
   in
 
-  let check_if_validator_is_current_proposer level previous_timestamp =
+  let check_if_validator_is_current_proposer round previous_timestamp =
     let current_timestamp = Time.System.now () |> Time.System.to_protocol in
     Client_proto_commands.validator_set cctxt >>=? fun validators ->
     match
       Round_selection.get_validator
         validators
-        level
+        round
         (Time.Protocol.to_seconds current_timestamp)
         (Time.Protocol.to_seconds previous_timestamp)
         (Time.Protocol.to_seconds block_time)

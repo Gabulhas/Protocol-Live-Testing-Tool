@@ -25,7 +25,7 @@ async def test():
     protocol_name = "poa"
     parameters = get_protocol_parameters(protocol_name)
 
-    number_of_nodes = 5
+    number_of_nodes = 2
     fitness = 0
 
     initial_validators = parameters["constants"]["initial_validator_set"]

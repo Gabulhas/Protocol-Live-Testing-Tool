@@ -1,5 +1,6 @@
-open Protocol 
+open Protocol
 open Alpha_context
+
 let compare_op op1 op2 =
   try Stdlib.compare op1 op2
   with _ ->

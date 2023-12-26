@@ -2,8 +2,8 @@
     "constants": 
         {
             "block_time": "60",
-            "initial_target": "0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-            "difficulty_adjust_epoch_size": 100,
+            "initial_target": "0x0000DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+            "difficulty_adjust_epoch_size": 4,
             "halving_epoch_size": 100,
             "reward_multiplier": "10000000000000"
         }

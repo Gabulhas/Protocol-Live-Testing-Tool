@@ -14,7 +14,9 @@ let get_new_possible_block cctxt state account =
   let time = Time.System.now () |> Time.System.to_protocol in
   get_new_header_protocol_data cctxt account >>=? fun protocol_data ->
   Operation_handler.get_latest_operations state >>= fun latest_operations ->
-  cctxt#message "Got %d operations" (List.length latest_operations)
+  cctxt#message
+    "Got %d operations"
+    (List.length @@ List.flatten latest_operations)
   >>= fun () ->
   Alpha_block_services.Helpers.Preapply.block
     cctxt

@@ -12,7 +12,7 @@ let max_operation_data_length = 32 * 1024 (*Move this to constants*)
 
 let max_block_length = Alpha_context.Block_header.max_header_length
 
-let validation_passes = Updater.[{max_size = 1000; max_op = Some 10000}]
+let validation_passes = Updater.[{max_size = 1000000; max_op = None }]
 
 let acceptable_pass _op = Some 0
 

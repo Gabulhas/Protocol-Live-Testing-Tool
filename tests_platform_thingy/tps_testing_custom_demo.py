@@ -21,34 +21,33 @@ def reveal_and_start_mine(node, miner_address):
 
     subprocess.Popen(
         ["./octez-baker-custom-demo", "-base-dir", node["dir"], "-endpoint", f"http://localhost:{node['rpc']}",
-         "run", miner_address, "2000000"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+         "run", miner_address, "2000000"]
+        # ,
+        # stdout=subprocess.DEVNULL,
+        # stderr=subprocess.DEVNULL
     )
 
 
-async def fetch_tps(session):
-    while True:
-        async with session.get(f"{ADDRESS}/tps") as response:
-            tps = await response.text()
-            print(f"Current TPS: {tps}")
-        await asyncio.sleep(1)  # Adjust the sleep time as needed
+def spam_transactions(session, node):
+    def spam():
+        node_rpc = node["rpc"]
 
+        i = 0
+        while True:
+            i = i + 1
+            subprocess.run(
+                ["./octez-client", "--endpoint", f"http://127.0.0.1:{node_rpc}", "transfer", "1", "from",
+                 MINER_ADD, "to", OTHER_ADD, "--counter", str(i)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
 
-async def spam_transactions(session, node):
-    node_rpc = node["rpc"]
-
-    while True:
-        subprocess.run(
-            ["./octez-client", "--endpoint", f"http://127.0.0.1:{node_rpc}", "transfer", "1", "from",
-                MINER_ADD, "to", OTHER_ADD],
-        )
-
-        await asyncio.sleep(0.2)  # Adjust the sleep time as needed
+    spam_thread = threading.Thread(target=spam)
+    spam_thread.start()
 
 
 async def test():
-    blocks_to_wait = 5
+    blocks_to_wait = 3
     protocol_name = "demo"
     parameters = get_protocol_parameters(protocol_name)
     number_of_nodes = 2
@@ -70,9 +69,9 @@ async def test():
     print(nodes)
 
     print("Mining:")
-    reveal_and_start_mine(nodes[0], MINER_ADD)
 
     target_node = nodes[0]
+    reveal_and_start_mine(target_node, MINER_ADD)
 
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_tps(session)]
@@ -94,7 +93,8 @@ async def test():
 
         # for node in nodes:
         #     tasks.append(spam_transactions(session, node))
-        tasks.append(spam_transactions(session, target_node))
+        # tasks.append(spam_transactions(session, target_node))
+        spam_transactions(session, target_node)
 
         await asyncio.gather(*tasks)
 

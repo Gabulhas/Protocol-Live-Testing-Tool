@@ -26,8 +26,7 @@ let monitor_operations cctxt =
 
 (*So far theres only a type of transactions*)
 let get_latest_operations state =
-  Lwt.return
-    [Operation_set.fold (fun op init -> op :: init) state.operation_pool []]
+  Lwt.return [Operation_set.elements state.operation_pool]
 
 let operation_worker cctxt state =
   let open Protocol_client_context in
@@ -43,24 +42,26 @@ let operation_worker cctxt state =
         Alpha_block_services.Mempool.request_operations cctxt () >>= fun _ ->
         state.canceler <- Lwt_canceler.create () ;
         Lwt_canceler.on_cancel state.canceler (fun () ->
-            (*this adds a callback as when it gets canceled*)
             op_stream_stopper () ;
             Lwt.return_unit) ;
 
+        state.operation_pool <- Operation_set.empty ;
         let rec loop () =
           Lwt_stream.get operation_stream >>= function
           | None ->
-              (* When the stream closes, it means a new head has been set,
-                 we cancel the monitoring and flush current operations *)
               op_stream_stopper () ;
               worker_loop ()
           | Some ops ->
+              (* Define operation_to_string as per your needs *)
               state.operation_pool <-
                 List.fold_left
-                  (fun init op -> Operation_set.add op init)
+                  (fun acc op -> Operation_set.add op acc)
                   state.operation_pool
                   ops ;
-              loop ()
+              Lwt_io.printf
+                "Pool size %d"
+                (Operation_set.elements state.operation_pool |> List.length)
+              >>= fun () -> loop ()
         in
         loop ()
   in

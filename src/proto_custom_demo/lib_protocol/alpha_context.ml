@@ -112,6 +112,6 @@ let finalize ?commit_message:message (c : context) fitness :
     Updater.context;
     fitness;
     message;
-    max_operations_ttl = 60;
+    max_operations_ttl = 120;
     last_allowed_fork_level = c |> Raw_context.first_level |> Int32.pred;
   }
